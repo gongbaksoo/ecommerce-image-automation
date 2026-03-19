@@ -6,21 +6,13 @@ export interface GeminiModel {
   description: string;
 }
 
+// 이미지 생성(responseModalities: IMAGE)을 지원하는 모델만 포함
+// 안정 버전(gemini-2.0-flash 등)은 이미지 생성을 지원하지 않음
 export const GEMINI_MODELS: GeminiModel[] = [
   {
     id: 'gemini-2.0-flash-exp',
     name: 'Gemini 2.0 Flash Exp (추천)',
-    description: '무료 API 키로 이미지 생성 가능',
-  },
-  {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    description: '안정 버전',
-  },
-  {
-    id: 'gemini-exp-1206',
-    name: 'Gemini Exp 1206',
-    description: '실험적 모델',
+    description: '무료 API 키로 이미지 생성 가능. 실험적 모델.',
   },
 ];
 
