@@ -112,6 +112,18 @@ export default function ApiKeyManager() {
                 </div>
               </label>
             ))}
+
+            {/* 커스텀 모델 ID */}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-gray-500">또는 직접 입력:</span>
+              <input
+                type="text"
+                className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
+                placeholder="모델 ID (예: gemini-2.0-flash-001)"
+                value={GEMINI_MODELS.some((m) => m.id === selectedModel) ? '' : selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -123,7 +135,7 @@ export default function ApiKeyManager() {
 
           {geminiKey ? (
             <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-              Gemini API 설정 완료 — {GEMINI_MODELS.find((m) => m.id === selectedModel)?.name}
+              Gemini API 설정 완료 — {GEMINI_MODELS.find((m) => m.id === selectedModel)?.name || selectedModel}
             </div>
           ) : (
             <div className="rounded-md bg-yellow-50 px-3 py-2 text-sm text-yellow-700">

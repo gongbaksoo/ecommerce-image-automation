@@ -1,25 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useEditor } from '@/contexts/EditorContext';
 import { getGeminiApiKey, getGeminiModel } from '@/lib/storage/apiKeyStorage';
+import { showToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
 
 export default function BackgroundConfigurator() {
   const { state, dispatch } = useEditor();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!state.aiPrompt.trim()) return;
 
     const apiKey = getGeminiApiKey();
     if (!apiKey) {
-      alert('Gemini API 키가 설정되지 않았습니다.\n설정 페이지에서 API 키를 먼저 입력해주세요.');
+      showToast('설정 페이지에서 API 키를 먼저 입력해주세요', 'error');
       return;
     }
 
     setIsGenerating(true);
+    setError(null);
     try {
       const res = await fetch('/api/generate-background', {
         method: 'POST',
@@ -35,11 +39,13 @@ export default function BackgroundConfigurator() {
       const data = await res.json();
       if (data.imageUrl) {
         dispatch({ type: 'SET_BACKGROUND_IMAGE', url: data.imageUrl });
+        showToast('배경 이미지가 생성되었습니다', 'success');
+        setError(null);
       } else {
-        alert(data.error || 'AI 배경 생성에 실패했습니다');
+        setError(data.error || 'AI 배경 생성에 실패했습니다');
       }
     } catch {
-      alert('AI 배경 생성에 실패했습니다. 직접 업로드를 이용해주세요.');
+      setError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsGenerating(false);
     }
@@ -108,6 +114,14 @@ export default function BackgroundConfigurator() {
             }
             onRemove={() => dispatch({ type: 'SET_REFERENCE_IMAGE', file: null })}
           />
+          {!getGeminiApiKey() && (
+            <div className="rounded-md bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
+              API 키가 필요합니다.{' '}
+              <Link href="/settings" className="font-medium text-blue-600 hover:underline">
+                설정 페이지에서 입력
+              </Link>
+            </div>
+          )}
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !state.aiPrompt.trim()}
@@ -115,6 +129,16 @@ export default function BackgroundConfigurator() {
           >
             {isGenerating ? '생성 중...' : '배경 생성하기'}
           </Button>
+          {error && (
+            <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+              <p className="mt-1 text-xs text-red-500">
+                다른 모델로 변경하거나{' '}
+                <Link href="/settings" className="font-medium underline">설정</Link>
+                에서 API 키를 확인해주세요.
+              </p>
+            </div>
+          )}
           {state.backgroundImage && state.backgroundType === 'ai' && (
             <div className="overflow-hidden rounded-lg border border-gray-200">
               <img
