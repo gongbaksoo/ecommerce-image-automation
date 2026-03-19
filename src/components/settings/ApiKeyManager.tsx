@@ -2,14 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import { loadApiSettings, saveApiSettings, GEMINI_MODELS } from '@/lib/storage/apiKeyStorage';
+import { loadApiSettings, saveApiSettings } from '@/lib/storage/apiKeyStorage';
 import { showToast } from '@/components/ui/Toast';
+
+interface FetchedModel {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export default function ApiKeyManager() {
   const [geminiKey, setGeminiKey] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-exp');
+  const [customModel, setCustomModel] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [fetchedModels, setFetchedModels] = useState<FetchedModel[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
     const settings = loadApiSettings();
@@ -19,8 +28,9 @@ export default function ApiKeyManager() {
   }, []);
 
   const handleSave = () => {
-    saveApiSettings({ geminiApiKey: geminiKey.trim(), geminiModel: selectedModel });
-    showToast('API 설정이 저장되었습니다', 'success');
+    const modelToSave = customModel.trim() || selectedModel;
+    saveApiSettings({ geminiApiKey: geminiKey.trim(), geminiModel: modelToSave });
+    showToast(`API 설정 저장 완료 (모델: ${modelToSave})`, 'success');
   };
 
   const handleClear = () => {
@@ -29,19 +39,47 @@ export default function ApiKeyManager() {
     showToast('API 키가 삭제되었습니다', 'info');
   };
 
+  const handleFetchModels = async () => {
+    if (!geminiKey.trim()) {
+      showToast('API 키를 먼저 입력하세요', 'error');
+      return;
+    }
+    setIsFetching(true);
+    try {
+      const res = await fetch('/api/list-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: geminiKey.trim() }),
+      });
+      const data = await res.json();
+      if (data.models) {
+        setFetchedModels(data.models);
+        showToast(`${data.models.length}개 모델을 조회했습니다`, 'success');
+      } else {
+        showToast(data.error || '조회 실패', 'error');
+      }
+    } catch {
+      showToast('모델 목록 조회에 실패했습니다', 'error');
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   if (!isLoaded) return null;
+
+  const effectiveModel = customModel.trim() || selectedModel;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-100 px-5 py-4">
         <h3 className="text-lg font-semibold text-gray-900">API 설정</h3>
         <p className="mt-1 text-sm text-gray-500">
-          AI 배경 생성에 필요한 API 키와 모델을 설정하세요. 브라우저에만 저장됩니다.
+          AI 배경 생성에 필요한 API 키와 모델을 설정하세요
         </p>
       </div>
 
       <div className="p-5 flex flex-col gap-5">
-        {/* API 키 입력 */}
+        {/* API 키 */}
         <div>
           <label className="mb-1.5 block text-sm font-medium text-gray-700">
             Gemini API Key
@@ -70,76 +108,79 @@ export default function ApiKeyManager() {
             )}
           </div>
           <p className="mt-1.5 text-xs text-gray-400">
-            <a
-              href="https://aistudio.google.com/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
-            >
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
               Google AI Studio
-            </a>
-            에서 무료로 API 키를 발급받을 수 있습니다.
+            </a>에서 무료로 발급
           </p>
         </div>
 
         {/* 모델 선택 */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            이미지 생성 모델
-          </label>
-          <div className="flex flex-col gap-2">
-            {GEMINI_MODELS.map((model) => (
-              <label
-                key={model.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
-                  selectedModel === model.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="geminiModel"
-                  value={model.id}
-                  checked={selectedModel === model.id}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="mt-0.5 text-blue-600"
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{model.name}</p>
-                  <p className="text-xs text-gray-500">{model.description}</p>
-                  <p className="mt-0.5 text-xs font-mono text-gray-400">{model.id}</p>
-                </div>
-              </label>
-            ))}
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">이미지 생성 모델</label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleFetchModels}
+              disabled={isFetching || !geminiKey.trim()}
+            >
+              {isFetching ? '조회 중...' : '사용 가능한 모델 조회'}
+            </Button>
+          </div>
 
-            {/* 커스텀 모델 ID */}
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs text-gray-500">또는 직접 입력:</span>
-              <input
-                type="text"
-                className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs font-mono focus:border-blue-500 focus:outline-none"
-                placeholder="모델 ID (예: gemini-2.0-flash-001)"
-                value={GEMINI_MODELS.some((m) => m.id === selectedModel) ? '' : selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-              />
+          {/* 조회된 모델 목록 */}
+          {fetchedModels.length > 0 ? (
+            <div className="flex flex-col gap-1">
+              <select
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  setCustomModel('');
+                }}
+              >
+                {fetchedModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.id})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400">
+                {fetchedModels.length}개 모델 조회됨. 이미지 생성은 일부 모델만 지원합니다.
+              </p>
             </div>
+          ) : (
+            <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-500">
+              &quot;사용 가능한 모델 조회&quot; 버튼을 눌러 API 키로 사용 가능한 모델을 확인하세요
+            </p>
+          )}
+
+          {/* 직접 입력 */}
+          <div className="mt-3">
+            <label className="mb-1 block text-xs text-gray-500">또는 모델 ID 직접 입력</label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none"
+              placeholder="예: gemini-2.0-flash-exp"
+              value={customModel}
+              onChange={(e) => setCustomModel(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* 저장 버튼 + 상태 */}
+        {/* 저장 + 상태 */}
         <div className="flex flex-col gap-3">
           <Button onClick={handleSave} disabled={!geminiKey.trim()} className="w-full">
-            설정 저장
+            설정 저장 ({effectiveModel})
           </Button>
 
           {geminiKey ? (
             <div className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-              Gemini API 설정 완료 — {GEMINI_MODELS.find((m) => m.id === selectedModel)?.name || selectedModel}
+              API 설정 완료 — 모델: <span className="font-mono">{effectiveModel}</span>
             </div>
           ) : (
             <div className="rounded-md bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
-              API 키가 설정되지 않았습니다. AI 배경 생성을 사용하려면 키를 입력하세요.
+              API 키를 입력하세요
             </div>
           )}
         </div>
