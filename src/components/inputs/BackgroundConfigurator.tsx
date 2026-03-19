@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useEditor } from '@/contexts/EditorContext';
+import { getGeminiApiKey } from '@/lib/storage/apiKeyStorage';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
 
@@ -11,6 +12,13 @@ export default function BackgroundConfigurator() {
 
   const handleGenerate = async () => {
     if (!state.aiPrompt.trim()) return;
+
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      alert('Gemini API 키가 설정되지 않았습니다.\n설정 페이지에서 API 키를 먼저 입력해주세요.');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const res = await fetch('/api/generate-background', {
@@ -18,6 +26,7 @@ export default function BackgroundConfigurator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: state.aiPrompt,
+          apiKey,
           width: 1200,
           height: 800,
         }),

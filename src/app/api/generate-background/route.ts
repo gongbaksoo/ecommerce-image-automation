@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'GEMINI_API_KEY가 설정되지 않았습니다. .env.local에 추가해주세요.' },
-      { status: 500 }
-    );
-  }
-
   try {
-    const { prompt, width, height } = await request.json();
+    const { prompt, width, height, apiKey: clientApiKey } = await request.json();
+
+    // 클라이언트에서 전달받은 키 우선, 없으면 환경변수
+    const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'API 키가 설정되지 않았습니다. 설정 페이지에서 Gemini API 키를 입력해주세요.' },
+        { status: 400 }
+      );
+    }
 
     if (!prompt) {
       return NextResponse.json({ error: 'prompt가 필요합니다' }, { status: 400 });
