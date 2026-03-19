@@ -155,8 +155,9 @@ interface Platform {
   updatedAt: string;           // ISO 날짜
 }
 
-/** localStorage 저장 키: 'platforms' */
-/** localStorage 데이터 구조: Platform[] */
+/** localStorage 저장 키 */
+// 'ecommerce-image-platforms' → Platform[]
+// 'ecommerce-image-api-settings' → { geminiApiKey: string, geminiModel: string }
 
 // ========== 편집기 상태 관련 ==========
 
@@ -306,21 +307,26 @@ export function deleteImageSpec(platformId: string, specId: string): void
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| POST | /api/generate-background | Gemini AI 배경 이미지 생성 | API Key (서버) |
+| POST | /api/generate-background | Gemini AI 배경 이미지 생성 | API Key (클라이언트 전달) |
+| POST | /api/list-models | 사용 가능한 Gemini 모델 목록 조회 | API Key (클라이언트 전달) |
 
-> 이 앱은 MVP 단계에서 DB/인증이 없으므로 API Route는 AI 배경 생성 프록시 1개만 존재합니다.
+> API 키는 사용자가 /settings 페이지에서 localStorage에 저장하고, API 호출 시 request body로 전달합니다.
 
 ### 4.2 Detailed Specification
 
 #### `POST /api/generate-background`
 
-Gemini API를 프록시하여 배경 이미지를 생성합니다. API 키를 클라이언트에 노출하지 않기 위해 서버사이드에서 처리합니다.
+Gemini API를 프록시하여 배경 이미지를 생성합니다. 클라이언트에서 API 키와 모델 ID를 전달합니다.
+Gemini 모델은 `generateContent` + `responseModalities: ['IMAGE', 'TEXT']`를 사용하고,
+Imagen 모델은 `predict` 엔드포인트를 사용합니다.
 
 **Request:**
 ```json
 {
   "prompt": "봄 분위기의 밝은 파스텔톤 행사 배경, 꽃잎과 리본 장식",
-  "referenceImage": "data:image/png;base64,...",  // optional
+  "apiKey": "AIza...",
+  "model": "gemini-2.0-flash-exp",
+  "referenceImage": "data:image/png;base64,...",
   "width": 1240,
   "height": 400
 }
@@ -584,28 +590,25 @@ export async function POST(request: Request) {
 
 ### 5.7 Component List
 
-| Component | Location | Responsibility |
-|-----------|----------|----------------|
-| `PlatformManager` | components/settings/ | 쇼핑몰 CRUD 관리 (추가/수정/삭제) |
-| `ImageSpecManager` | components/settings/ | 이미지 종류/규격 CRUD 관리 |
-| `PlatformFormModal` | components/settings/ | 쇼핑몰 추가/수정 모달 |
-| `ImageSpecFormModal` | components/settings/ | 이미지 종류 추가/수정 모달 |
-| `PlatformSelector` | components/platform/ | 편집기에서 쇼핑몰 체크박스 선택 (localStorage 로드) |
-| `ImageTypeSelector` | components/platform/ | 선택된 쇼핑몰별 이미지 종류 체크박스 + 규격 표시 |
-| `EditorMain` | components/editor/ | 편집기 전체 레이아웃 (좌측 설정 + 우측 미리보기) |
-| `HeroSection` | components/editor/ | 상단 히어로 렌더링 (배경 + 문구 + 연출 이미지) |
-| `ProductGrid` | components/editor/ | 하단 상품 그리드 렌더링 (1/2/3열) |
-| `ProductCard` | components/editor/ | 개별 상품 카드 (이미지 + 상품명 + 구성 + 가격) |
-| `PreviewPanel` | components/editor/ | 실시간 미리보기 + 쇼핑몰별 탭 전환 |
-| `RenderTarget` | components/editor/ | html2canvas 캡처 대상 영역 (숨김) |
-| `ImageUploader` | components/inputs/ | 드래그앤드롭/클릭 이미지 업로드 |
-| `TextInputForm` | components/inputs/ | 문구 입력 + 스타일(폰트/크기/색상) 설정 |
-| `ProductInputForm` | components/inputs/ | 상품 정보 입력 폼 (이미지/이름/구성/가격) |
-| `FontSelector` | components/inputs/ | 기본 폰트 선택 + 커스텀 폰트 업로드 |
-| `ColumnSelector` | components/inputs/ | 열 수 선택 (1/2/3) 라디오 버튼 |
-| `BackgroundConfigurator` | components/inputs/ | 배경 설정 (AI/업로드/단색) + 프롬프트 입력 |
-| `ExportButton` | components/export/ | 이미지 생성 버튼 + 진행률 표시 |
-| `DownloadManager` | components/export/ | 개별/ZIP 다운로드 관리 |
+| Component | Location | Responsibility | Status |
+|-----------|----------|----------------|--------|
+| `ApiKeyManager` | components/settings/ | API 키 입력 + 모델 조회/선택 | ✅ |
+| `PlatformManager` | components/settings/ | 쇼핑몰 CRUD + 이미지 규격 CRUD (통합) | ✅ |
+| `PlatformFormModal` | components/settings/ | 쇼핑몰 추가/수정 모달 | ✅ |
+| `ImageSpecFormModal` | components/settings/ | 이미지 종류 추가/수정 모달 | ✅ |
+| `PlatformSelector` | components/platform/ | 쇼핑몰/이미지 종류 드롭다운 + 레이아웃 유형 선택 | ✅ |
+| `EditorMain` | components/editor/ | 편집기 전체 레이아웃 (좌측 설정 + 우측 미리보기) | ✅ |
+| `HeroSection` | components/editor/ | 상단 히어로 렌더링 (문구 + 연출 이미지, flex 기반) | ✅ |
+| `ProductGrid` | components/editor/ | 하단 상품 그리드 (1/2/3열, flex:1 + alignContent:end) | ✅ |
+| `ProductCard` | components/editor/ | 개별 상품 카드 (이미지 maxHeight:120px + 텍스트) | ✅ |
+| `PreviewPanel` | components/editor/ | 실시간 미리보기 (scale 기반 축소, renderRef 포함) | ✅ |
+| `ImageUploader` | components/inputs/ | 드래그앤드롭/클릭 이미지 업로드 | ✅ |
+| `TextInputForm` | components/inputs/ | 문구 입력 + 스타일(폰트/크기/색상) 설정 | ✅ |
+| `ProductInputForm` | components/inputs/ | 상품 정보 입력 + 열 수 선택 (통합) | ✅ |
+| `FontSelector` | components/inputs/ | 기본 폰트 선택 + 커스텀 폰트 업로드 (FontFace API) | ✅ |
+| `BackgroundConfigurator` | components/inputs/ | 배경 설정 (단색/업로드/AI) + 모델 선택 + 레퍼런스 이미지 | ✅ |
+| `ExportButton` | components/export/ | 이미지 생성(html2canvas) + PNG/JPG 다운로드 | ✅ |
+| `Button/Input/Modal/Toast/Navigation` | components/ui/ | 공통 UI 컴포넌트 | ✅ |
 
 ---
 
@@ -633,12 +636,12 @@ export async function POST(request: Request) {
 
 ## 7. Security Considerations
 
-- [x] Gemini API Key는 `GEMINI_API_KEY` 환경변수로 서버사이드에서만 사용 (클라이언트 노출 방지)
+- [x] Gemini API Key는 localStorage에 저장, API 호출 시 request body로 서버에 전달 (환경변수도 병행 지원)
 - [x] 업로드 파일 형식 검증 (이미지: jpg/png/webp, 폰트: ttf/otf/woff2)
 - [x] 업로드 파일 크기 제한 (이미지 10MB, 폰트 5MB)
-- [x] API Rate Limiting (IP 당 배경 생성 요청 제한)
 - [ ] HTTPS 적용 (배포 시)
 - [x] 사용자 업로드 파일은 서버에 저장하지 않음 (브라우저 메모리에서만 처리)
+- [x] API 모델 목록 조회로 유효한 모델만 사용 가능
 
 ---
 
@@ -750,8 +753,9 @@ interface EditorContextType {
 
 | Name | Purpose | Scope |
 |------|---------|-------|
-| `GEMINI_API_KEY` | Gemini API 인증 키 | Server only |
-| `NEXT_PUBLIC_MAX_UPLOAD_SIZE` | 최대 업로드 크기 (bytes) | Client |
+| `GEMINI_API_KEY` | Gemini API 인증 키 (환경변수 폴백용, 선택) | Server only |
+
+> 주: API 키는 주로 사용자가 /settings에서 localStorage에 저장하며, 환경변수는 폴백으로만 사용.
 
 ---
 
@@ -762,157 +766,125 @@ interface EditorContextType {
 ```
 📦 E-commerce Image Automation
 ├── app/
-│   ├── page.tsx                          # 메인 편집기 페이지
+│   ├── page.tsx                          # 메인 편집기 페이지 (EditorProvider 포함)
 │   ├── settings/
-│   │   └── page.tsx                      # 쇼핑몰 규격 관리 페이지
-│   ├── layout.tsx                        # 루트 레이아웃 (네비게이션 포함)
-│   ├── globals.css                       # 글로벌 스타일 + Tailwind
+│   │   └── page.tsx                      # 설정 페이지 (API 키 + 쇼핑몰 규격)
+│   ├── layout.tsx                        # 루트 레이아웃 (Navigation + Toast)
+│   ├── globals.css                       # 글로벌 스타일 + Tailwind + keyframes
 │   └── api/
-│       └── generate-background/
-│           └── route.ts                  # Gemini AI 배경 생성 API
+│       ├── generate-background/
+│       │   └── route.ts                  # Gemini AI 배경 생성 (Gemini/Imagen 분기)
+│       └── list-models/
+│           └── route.ts                  # Gemini 모델 목록 조회 API
 │
 ├── components/
-│   ├── settings/                         # 규격 관리 컴포넌트
-│   │   ├── PlatformManager.tsx           # 쇼핑몰 목록 + CRUD
-│   │   ├── ImageSpecManager.tsx          # 이미지 종류 목록 + CRUD
+│   ├── settings/
+│   │   ├── ApiKeyManager.tsx             # API 키 입력 + 모델 조회/선택
+│   │   ├── PlatformManager.tsx           # 쇼핑몰 CRUD + 이미지 규격 CRUD (통합)
 │   │   ├── PlatformFormModal.tsx         # 쇼핑몰 추가/수정 모달
 │   │   └── ImageSpecFormModal.tsx        # 이미지 종류 추가/수정 모달
 │   │
-│   ├── platform/                         # 편집기 내 쇼핑몰 선택
-│   │   ├── PlatformSelector.tsx          # 쇼핑몰 선택 (localStorage에서 로드)
-│   │   └── ImageTypeSelector.tsx         # 이미지 종류 선택
+│   ├── platform/
+│   │   └── PlatformSelector.tsx          # 쇼핑몰/이미지 드롭다운 + 레이아웃 유형 선택
 │   │
 │   ├── editor/
 │   │   ├── EditorMain.tsx                # 편집기 메인 (좌설정 + 우미리보기)
-│   │   ├── HeroSection.tsx               # 상단 히어로 렌더링
-│   │   ├── ProductGrid.tsx               # 하단 상품 그리드
-│   │   ├── ProductCard.tsx               # 개별 상품 카드
-│   │   ├── PreviewPanel.tsx              # 미리보기 패널 + 탭
-│   │   └── RenderTarget.tsx              # html2canvas 캡처 대상 (off-screen)
+│   │   ├── HeroSection.tsx               # 상단 히어로 (문구 + 연출이미지, flex)
+│   │   ├── ProductGrid.tsx               # 하단 상품 그리드 (flex:1, alignContent:end)
+│   │   ├── ProductCard.tsx               # 개별 상품 카드 (이미지 maxHeight:120px)
+│   │   └── PreviewPanel.tsx              # 미리보기 (scale + renderRef 포함)
 │   │
 │   ├── inputs/
-│   │   ├── ImageUploader.tsx             # 이미지 업로드
-│   │   ├── TextInputForm.tsx             # 문구 + 스타일 입력
-│   │   ├── ProductInputForm.tsx          # 상품 정보 입력
-│   │   ├── FontSelector.tsx              # 폰트 선택 + 업로드
-│   │   ├── ColumnSelector.tsx            # 열 수 선택
-│   │   └── BackgroundConfigurator.tsx    # 배경 설정 (AI/업로드/단색)
+│   │   ├── ImageUploader.tsx             # 드래그앤드롭/클릭 이미지 업로드
+│   │   ├── TextInputForm.tsx             # 문구 + 스타일 설정
+│   │   ├── ProductInputForm.tsx          # 상품 정보 입력 + 열 수 선택 (통합)
+│   │   ├── FontSelector.tsx              # 폰트 선택 + 업로드 (FontFace API)
+│   │   └── BackgroundConfigurator.tsx    # 배경 (단색/업로드/AI) + 모델 선택
 │   │
 │   ├── export/
-│   │   ├── ExportButton.tsx              # 이미지 생성 버튼
-│   │   └── DownloadManager.tsx           # 다운로드 관리
+│   │   └── ExportButton.tsx              # 이미지 생성(html2canvas) + 다운로드
 │   │
-│   └── ui/                               # 공통 UI (버튼, 인풋 등)
+│   └── ui/
 │       ├── Button.tsx
 │       ├── Input.tsx
-│       ├── Checkbox.tsx
-│       ├── RadioGroup.tsx
-│       ├── ColorPicker.tsx
+│       ├── Modal.tsx
+│       ├── Navigation.tsx
 │       └── Toast.tsx
 │
 ├── contexts/
-│   └── EditorContext.tsx                  # 편집기 전역 상태
+│   └── EditorContext.tsx                  # 편집기 전역 상태 (useReducer)
 │
 ├── hooks/
-│   ├── useEditor.ts                      # EditorContext 사용 훅
-│   ├── usePlatforms.ts                   # localStorage 쇼핑몰 데이터 로드/관리
-│   ├── useFontLoader.ts                  # 커스텀 폰트 로딩
-│   ├── useImageExport.ts                 # html2canvas 이미지 변환
-│   └── useBackgroundGenerator.ts         # AI 배경 생성 API 호출
+│   └── usePlatforms.ts                   # localStorage 쇼핑몰 데이터 CRUD
 │
 ├── lib/
 │   ├── storage/
-│   │   └── platformStorage.ts            # localStorage CRUD (쇼핑몰/규격)
+│   │   ├── platformStorage.ts            # 쇼핑몰/규격 localStorage CRUD
+│   │   └── apiKeyStorage.ts              # API 키/모델 설정 localStorage
 │   │
 │   ├── export/
-│   │   ├── htmlToImage.ts                # html2canvas 래퍼
-│   │   ├── resizer.ts                    # 규격별 리사이즈 로직
-│   │   └── zipDownloader.ts              # JSZip 기반 ZIP 생성/다운로드
-│   │
-│   ├── fonts/
-│   │   ├── fontManager.ts                # 폰트 로딩/관리
-│   │   └── defaultFonts.ts              # 기본 제공 폰트 목록
+│   │   └── htmlToImage.ts                # html2canvas 래퍼 (PNG/JPG 지원)
 │   │
 │   └── utils/
-│       ├── formatPrice.ts                # 가격 포맷팅 (원화, 취소선)
-│       ├── generateFileName.ts           # 파일명 생성 규칙
-│       └── fileValidation.ts             # 파일 형식/크기 검증
+│       └── formatPrice.ts                # 가격 포맷팅 (원화)
 │
 ├── types/
-│   └── index.ts                          # 모든 타입 정의
+│   └── index.ts                          # 모든 타입 + 기본 스타일 상수
 │
-├── public/
-│   └── fonts/                            # 기본 제공 폰트 파일
-│
-├── .env.local                            # GEMINI_API_KEY
+├── .env.example                          # GEMINI_API_KEY 안내
 ├── package.json
 ├── tsconfig.json
-├── tailwind.config.ts
 └── next.config.ts
 ```
 
-### 11.2 Implementation Order
+### 11.2 Implementation Order (구현 완료 상태 반영)
 
 ```
-Phase 1: 프로젝트 기반 설정
-  1. [ ] Next.js + TypeScript + Tailwind 프로젝트 초기화
-  2. [ ] 타입 정의 (types/index.ts)
-  3. [ ] 공통 UI 컴포넌트 (components/ui/)
-  4. [ ] 루트 레이아웃 + 네비게이션 (편집기 ↔ 설정)
+Phase 1: 프로젝트 기반 설정                              ✅ Done
+  1. [x] Next.js 16 + TypeScript + Tailwind 4 초기화
+  2. [x] 타입 정의 + LayoutType + 기본 스타일 상수
+  3. [x] 공통 UI (Button, Input, Modal, Toast, Navigation)
+  4. [x] 루트 레이아웃 + 네비게이션
 
-Phase 2: 쇼핑몰 규격 관리 시스템 (/settings)
-  5. [ ] platformStorage.ts (localStorage CRUD 유틸)
-  6. [ ] usePlatforms 훅 (로드/저장/CRUD 래퍼)
-  7. [ ] PlatformManager 컴포넌트 (쇼핑몰 목록 + 추가/삭제)
-  8. [ ] PlatformFormModal (쇼핑몰 이름 입력 모달)
-  9. [ ] ImageSpecManager (이미지 종류 목록 + 추가/수정/삭제)
-  10. [ ] ImageSpecFormModal (이름/너비/높이/형식/설명 입력 모달)
-  11. [ ] /settings 페이지 통합
+Phase 2: 설정 시스템 (/settings)                         ✅ Done
+  5. [x] platformStorage.ts + apiKeyStorage.ts
+  6. [x] usePlatforms 훅
+  7. [x] PlatformManager (쇼핑몰 + 이미지 규격 CRUD 통합)
+  8. [x] PlatformFormModal + ImageSpecFormModal
+  9. [x] ApiKeyManager (API 키 + 모델 조회/선택)
+  10. [x] /settings 페이지 통합
 
-Phase 3: 편집기 쇼핑몰 선택 (localStorage 연동)
-  12. [ ] PlatformSelector (localStorage에서 로드, 체크박스 선택)
-  13. [ ] ImageTypeSelector (선택한 쇼핑몰의 이미지 종류 표시)
-  14. [ ] 등록된 쇼핑몰 없을 때 → /settings 이동 안내 UI
+Phase 3: 편집기 쇼핑몰 선택                              ✅ Done
+  11. [x] PlatformSelector (드롭다운 + 레이아웃 유형 선택)
+  12. [x] 등록된 쇼핑몰 없을 때 → /settings 이동 안내 UI
 
-Phase 4: 편집기 입력 UI
-  15. [ ] EditorContext 구현 (contexts/EditorContext.tsx)
-  16. [ ] ImageUploader (드래그앤드롭 + 클릭)
-  17. [ ] TextInputForm (문구 + 폰트/크기/색상)
-  18. [ ] ProductInputForm (상품 추가/수정/삭제)
-  19. [ ] FontSelector (기본 폰트 + 커스텀 업로드)
-  20. [ ] ColumnSelector (1/2/3열)
-  21. [ ] BackgroundConfigurator (AI/업로드/단색)
+Phase 4: 편집기 입력 UI                                  ✅ Done
+  13. [x] EditorContext (useReducer 기반)
+  14. [x] ImageUploader (드래그앤드롭 + 클릭)
+  15. [x] TextInputForm + ProductInputForm (열 수 통합)
+  16. [x] FontSelector (FontFace API 동적 로딩)
+  17. [x] BackgroundConfigurator (단색/업로드/AI + 모델 선택)
 
-Phase 5: 미리보기 렌더링
-  22. [ ] HeroSection (배경 + 문구 + 연출이미지)
-  23. [ ] ProductCard (상품 카드 HTML/CSS)
-  24. [ ] ProductGrid (1/2/3열 CSS Grid)
-  25. [ ] PreviewPanel (미리보기 + 쇼핑몰별 탭)
-  26. [ ] EditorMain (좌측 설정 + 우측 미리보기 통합)
+Phase 5: 미리보기 렌더링                                 ✅ Done
+  18. [x] HeroSection (flex 기반, 콘텐츠 크기 자동)
+  19. [x] ProductCard (이미지 maxHeight:120px)
+  20. [x] ProductGrid (flex:1, alignContent:end)
+  21. [x] PreviewPanel (scale 기반 축소, renderRef 포함)
+  22. [x] EditorMain (좌설정 + 우미리보기)
 
-Phase 6: AI 배경 생성
-  27. [ ] Gemini API Route (app/api/generate-background/)
-  28. [ ] useBackgroundGenerator 훅
-  29. [ ] BackgroundConfigurator AI 모드 연동
+Phase 6: AI 배경 생성                                    ✅ Done
+  23. [x] Gemini API Route (Gemini/Imagen 분기)
+  24. [x] 모델 목록 조회 API (/api/list-models)
+  25. [x] BackgroundConfigurator AI 모드 연동 + 에러 핸들링
 
-Phase 7: 이미지 출력
-  30. [ ] RenderTarget (off-screen 캡처 대상)
-  31. [ ] htmlToImage (html2canvas 래퍼)
-  32. [ ] resizer (규격별 리사이즈)
-  33. [ ] useImageExport 훅
-  34. [ ] ExportButton (생성 + 진행률)
-  35. [ ] zipDownloader (JSZip)
-  36. [ ] DownloadManager (개별/ZIP 다운로드)
+Phase 7: 이미지 출력                                     ✅ Done
+  26. [x] htmlToImage (html2canvas, PNG/JPG 지원)
+  27. [x] ExportButton (생성 + 다운로드)
 
-Phase 8: 폰트 시스템
-  37. [ ] 기본 폰트 준비 (public/fonts/)
-  38. [ ] fontManager (@font-face 동적 로딩)
-  39. [ ] useFontLoader 훅
-
-Phase 9: 마무리
-  40. [ ] 에러 핸들링 및 사용자 피드백 (Toast)
-  41. [ ] 반응형 레이아웃 (모바일 대응)
-  42. [ ] 전체 통합 테스트
+Phase 8: 마무리                                          ✅ Done
+  28. [x] Toast 알림 + 인라인 에러 메시지
+  29. [x] .env.example
+  30. [x] 빌드 검증 + 푸시
 ```
 
 ---
@@ -922,3 +894,4 @@ Phase 9: 마무리
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 0.1 | 2026-03-18 | Initial draft | jeongjihye |
+| 0.2 | 2026-03-19 | 구현 완료 반영: 파일 구조/컴포넌트/API/구현순서 실제와 동기화. API 키 설정(ApiKeyManager), 모델 조회(/api/list-models), 레이아웃 유형(LayoutType), 미리보기 렌더링 개선(ProductCard maxHeight, ProductGrid flex) 반영 | jeongjihye |

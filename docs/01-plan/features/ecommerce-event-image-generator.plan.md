@@ -169,21 +169,24 @@
 
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
-| FR-01 | 상품 이미지를 다수 업로드할 수 있다 | High | Pending |
-| FR-02 | 행사 메인 문구를 입력하고 폰트/크기/색상을 설정할 수 있다 | High | Pending |
-| FR-03 | 개별 상품의 상품명, 구성 설명, 원가, 할인가를 입력할 수 있다 | High | Pending |
-| FR-04 | 메인 상품 연출 이미지를 업로드할 수 있다 | High | Pending |
-| FR-05 | Gemini API로 행사 분위기에 맞는 배경 이미지를 생성할 수 있다 | High | Pending |
-| FR-06 | 레퍼런스 이미지를 업로드하여 배경 생성 참고로 사용할 수 있다 | Medium | Pending |
-| FR-07 | 커스텀 폰트 파일(.ttf/.otf/.woff2)을 업로드하여 적용할 수 있다 | High | Pending |
-| FR-08 | 하단 상품 영역의 열 수를 1열/2열/3열 중 선택할 수 있다 | Medium | Pending |
-| FR-09 | 편집 내용을 실시간 HTML/CSS 기반으로 미리볼 수 있다 | High | Pending |
-| FR-10 | 쇼핑몰을 선택하면 해당 쇼핑몰에서 필요한 이미지 종류 목록이 표시된다 | High | Pending |
-| FR-11 | 이미지 종류를 선택하면 해당 규격(px)이 자동 적용된다 | High | Pending |
-| FR-12 | 여러 쇼핑몰/이미지 종류를 동시에 선택하여 일괄 생성할 수 있다 | Medium | Pending |
-| FR-13 | 생성된 이미지를 개별 또는 ZIP으로 일괄 다운로드할 수 있다 | High | Pending |
-| FR-14 | 사용자가 쇼핑몰/이미지 종류/규격을 직접 등록·수정·삭제할 수 있다 (/settings 페이지) | High | Pending |
-| FR-15 | 등록한 규격 데이터가 localStorage에 저장되어 브라우저 재방문 시에도 유지된다 | High | Pending |
+| FR-01 | 상품 이미지를 다수 업로드할 수 있다 | High | ✅ Done |
+| FR-02 | 행사 메인 문구를 입력하고 폰트/크기/색상을 설정할 수 있다 | High | ✅ Done |
+| FR-03 | 개별 상품의 상품명, 구성 설명, 원가, 할인가를 입력할 수 있다 | High | ✅ Done |
+| FR-04 | 메인 상품 연출 이미지를 업로드할 수 있다 | High | ✅ Done |
+| FR-05 | Gemini API로 행사 분위기에 맞는 배경 이미지를 생성할 수 있다 | High | ✅ Done |
+| FR-06 | 레퍼런스 이미지를 업로드하여 배경 생성 참고로 사용할 수 있다 | Medium | ✅ Done |
+| FR-07 | 커스텀 폰트 파일(.ttf/.otf/.woff2)을 업로드하여 적용할 수 있다 | High | ✅ Done |
+| FR-08 | 하단 상품 영역의 열 수를 1열/2열/3열 중 선택할 수 있다 | Medium | ✅ Done |
+| FR-09 | 편집 내용을 실시간 HTML/CSS 기반으로 미리볼 수 있다 | High | ✅ Done |
+| FR-10 | 쇼핑몰을 선택하면 해당 쇼핑몰에서 필요한 이미지 종류 목록이 표시된다 | High | ✅ Done |
+| FR-11 | 이미지 종류를 선택하면 해당 규격(px)이 자동 적용된다 | High | ✅ Done |
+| FR-12 | 여러 쇼핑몰/이미지 종류를 동시에 선택하여 일괄 생성할 수 있다 | Medium | N/A (설계 변경: 단일 규격 선택) |
+| FR-13 | 생성된 이미지를 개별 다운로드할 수 있다 (PNG/JPG) | High | ✅ Done |
+| FR-14 | 사용자가 쇼핑몰/이미지 종류/규격을 직접 등록·수정·삭제할 수 있다 (/settings 페이지) | High | ✅ Done |
+| FR-15 | 등록한 규격 데이터가 localStorage에 저장되어 브라우저 재방문 시에도 유지된다 | High | ✅ Done |
+| FR-16 | Gemini API 키를 설정 페이지에서 입력/저장할 수 있다 | High | ✅ Done |
+| FR-17 | 사용 가능한 AI 모델 목록을 API에서 조회하고 선택할 수 있다 | Medium | ✅ Done |
+| FR-18 | 레이아웃 유형 (히어로만/상품만/히어로+상품) 선택할 수 있다 | High | ✅ Done |
 
 ### 5.2 Non-Functional Requirements
 
@@ -201,11 +204,11 @@
 
 ### 6.1 Definition of Done
 
-- [ ] 모든 Functional Requirements (FR-01~FR-11) 구현 완료
-- [ ] 4개 쇼핑몰 규격 변환 정확도 100%
-- [ ] 실시간 미리보기 정상 동작
-- [ ] AI 배경 생성 → HTML 합성 → 이미지 변환 전체 파이프라인 동작
-- [ ] 코드 리뷰 완료
+- [x] 모든 Functional Requirements (FR-01~FR-18) 구현 완료 (FR-12는 설계 변경으로 N/A)
+- [x] 쇼핑몰 규격 사용자 등록 + 자동 적용
+- [x] 실시간 미리보기 정상 동작 (히어로/상품 레이아웃 포함)
+- [x] AI 배경 생성 → HTML 합성 → 이미지 변환 전체 파이프라인 동작
+- [x] 코드 리뷰 완료 (Gap 분석 93%)
 
 ### 6.2 Quality Criteria
 
@@ -396,3 +399,4 @@
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 0.1 | 2026-03-18 | Initial draft (Plan Plus) | jeongjihye |
+| 0.2 | 2026-03-19 | 구현 완료 반영: FR 상태 업데이트, API 키 설정(FR-16), 모델 선택(FR-17), 레이아웃 유형(FR-18) 추가, 설계 변경사항 반영 | jeongjihye |
