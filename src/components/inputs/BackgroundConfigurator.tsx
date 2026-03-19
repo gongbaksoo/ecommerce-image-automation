@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useEditor } from '@/contexts/EditorContext';
-import { getGeminiApiKey, getGeminiModel } from '@/lib/storage/apiKeyStorage';
+import { getGeminiApiKey, getGeminiModel, loadApiSettings, saveApiSettings, GEMINI_MODELS } from '@/lib/storage/apiKeyStorage';
 import { showToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
@@ -12,6 +12,7 @@ export default function BackgroundConfigurator() {
   const { state, dispatch } = useEditor();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentModel, setCurrentModel] = useState(() => getGeminiModel());
 
   const handleGenerate = async () => {
     if (!state.aiPrompt.trim()) return;
@@ -31,7 +32,7 @@ export default function BackgroundConfigurator() {
         body: JSON.stringify({
           prompt: state.aiPrompt,
           apiKey,
-          model: getGeminiModel(),
+          model: currentModel,
           width: 1200,
           height: 800,
         }),
@@ -99,6 +100,25 @@ export default function BackgroundConfigurator() {
 
       {state.backgroundType === 'ai' && (
         <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">모델</label>
+            <select
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              value={currentModel}
+              onChange={(e) => {
+                setCurrentModel(e.target.value);
+                const settings = loadApiSettings();
+                saveApiSettings({ ...settings, geminiModel: e.target.value });
+                setError(null);
+              }}
+            >
+              {GEMINI_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <textarea
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             rows={3}
