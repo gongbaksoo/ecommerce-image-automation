@@ -9,18 +9,18 @@ export interface GeminiModel {
 export const GEMINI_MODELS: GeminiModel[] = [
   {
     id: 'gemini-2.0-flash-exp',
-    name: 'Gemini 2.0 Flash Experimental',
-    description: '추천 — 무료 API 키로 이미지 생성 가능',
+    name: 'Gemini 2.0 Flash Exp (추천)',
+    description: '무료 API 키로 이미지 생성 가능',
   },
   {
-    id: 'gemini-2.0-flash-preview-image-generation',
-    name: 'Gemini 2.0 Flash Image Generation',
-    description: '이미지 생성 특화 (유료 플랜 필요할 수 있음)',
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    description: '안정 버전',
   },
   {
-    id: 'imagen-3.0-generate-002',
-    name: 'Imagen 3.0',
-    description: '최고 품질 이미지 생성 (유료 플랜 필요)',
+    id: 'gemini-exp-1206',
+    name: 'Gemini Exp 1206',
+    description: '실험적 모델',
   },
 ];
 
