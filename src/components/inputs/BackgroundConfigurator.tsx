@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useEditor } from '@/contexts/EditorContext';
-import { getGeminiApiKey } from '@/lib/storage/apiKeyStorage';
+import { getGeminiApiKey, getGeminiModel } from '@/lib/storage/apiKeyStorage';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
 
@@ -27,6 +27,7 @@ export default function BackgroundConfigurator() {
         body: JSON.stringify({
           prompt: state.aiPrompt,
           apiKey,
+          model: getGeminiModel(),
           width: 1200,
           height: 800,
         }),
