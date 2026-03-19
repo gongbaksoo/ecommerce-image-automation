@@ -11,10 +11,12 @@ export default function ProductGrid() {
   return (
     <div
       style={{
+        flex: 1,
         display: 'grid',
         gridTemplateColumns: `repeat(${state.productColumns}, 1fr)`,
         gap: '8px',
         padding: '10px',
+        alignContent: 'end',
       }}
     >
       {state.products.map((product) => (

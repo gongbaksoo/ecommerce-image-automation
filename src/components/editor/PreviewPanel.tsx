@@ -81,7 +81,6 @@ export default function PreviewPanel({ renderRef }: PreviewPanelProps) {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: showHero && showProducts ? 'space-between' : 'center',
                 height: '100%',
               }}
             >

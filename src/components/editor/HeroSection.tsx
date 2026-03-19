@@ -6,7 +6,16 @@ export default function HeroSection() {
   const { state } = useEditor();
 
   return (
-    <div className="relative flex flex-col items-center justify-center" style={{ minHeight: '50%' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: state.layoutType === 'hero-only' ? 1 : 'none',
+        padding: '15px 20px',
+      }}
+    >
       {/* 메인 문구 */}
       {state.heroTitle && (
         <h1
@@ -18,7 +27,6 @@ export default function HeroSection() {
             textAlign: state.heroTitleStyle.textAlign,
             lineHeight: 1.3,
             textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-            padding: '0 20px',
             wordBreak: 'keep-all',
           }}
         >
@@ -28,11 +36,11 @@ export default function HeroSection() {
 
       {/* 메인 연출 이미지 */}
       {state.heroImagePreview && (
-        <div className="mt-3 flex justify-center" style={{ maxHeight: '40%' }}>
+        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'center' }}>
           <img
             src={state.heroImagePreview}
             alt="연출 이미지"
-            style={{ maxWidth: '80%', maxHeight: '100%', objectFit: 'contain' }}
+            style={{ maxWidth: '60%', maxHeight: '150px', objectFit: 'contain' }}
           />
         </div>
       )}

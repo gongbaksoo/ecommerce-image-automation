@@ -17,10 +17,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '6px',
-        padding: '10px',
+        gap: '4px',
+        padding: '8px',
         backgroundColor: 'rgba(255,255,255,0.9)',
         borderRadius: '8px',
+        overflow: 'hidden',
       }}
     >
       {/* 상품 이미지 */}
@@ -29,17 +30,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           src={product.imagePreview}
           alt={product.name}
           style={{
-            width: '80%',
-            aspectRatio: '1',
-            objectFit: 'cover',
+            width: '100%',
+            maxHeight: '120px',
+            objectFit: 'contain',
             borderRadius: '6px',
           }}
         />
       ) : (
         <div
           style={{
-            width: '80%',
-            aspectRatio: '1',
+            width: '100%',
+            height: '80px',
             backgroundColor: '#e5e7eb',
             borderRadius: '6px',
             display: 'flex',
@@ -62,8 +63,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             fontWeight: state.productNameStyle.fontWeight,
             color: state.productNameStyle.color,
             textAlign: state.productNameStyle.textAlign,
-            lineHeight: 1.3,
+            lineHeight: 1.2,
             width: '100%',
+            margin: 0,
           }}
         >
           {product.name}
@@ -79,8 +81,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             fontWeight: state.productDescStyle.fontWeight,
             color: state.productDescStyle.color,
             textAlign: state.productDescStyle.textAlign,
-            lineHeight: 1.3,
+            lineHeight: 1.2,
             width: '100%',
+            margin: 0,
           }}
         >
           {product.description}
@@ -96,6 +99,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               color: '#999',
               textDecoration: 'line-through',
               lineHeight: 1.2,
+              margin: 0,
             }}
           >
             {formatPrice(product.originalPrice)}
@@ -108,7 +112,8 @@ export default function ProductCard({ product }: ProductCardProps) {
               fontSize: `${state.productPriceStyle.fontSize}px`,
               fontWeight: state.productPriceStyle.fontWeight,
               color: state.productPriceStyle.color,
-              lineHeight: 1.3,
+              lineHeight: 1.2,
+              margin: 0,
             }}
           >
             {formatPrice(product.salePrice)}
