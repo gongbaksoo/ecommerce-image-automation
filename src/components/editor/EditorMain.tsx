@@ -5,7 +5,7 @@ import { useEditor } from '@/contexts/EditorContext';
 import PlatformSelector from '@/components/platform/PlatformSelector';
 import BackgroundConfigurator from '@/components/inputs/BackgroundConfigurator';
 import TextInputForm from '@/components/inputs/TextInputForm';
-import ImageUploader from '@/components/inputs/ImageUploader';
+import HeroImageConfigurator from '@/components/inputs/HeroImageConfigurator';
 import ProductInputForm from '@/components/inputs/ProductInputForm';
 import FontSelector from '@/components/inputs/FontSelector';
 import PreviewPanel from './PreviewPanel';
@@ -30,19 +30,7 @@ export default function EditorMain() {
           {showHeroInputs && (
             <>
               <TextInputForm />
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <h3 className="mb-3 text-sm font-semibold text-gray-900">5. 메인 연출 이미지</h3>
-                <ImageUploader
-                  label="연출 이미지"
-                  preview={state.heroImagePreview}
-                  onUpload={(file, preview) =>
-                    dispatch({ type: 'SET_HERO_IMAGE', file, preview })
-                  }
-                  onRemove={() =>
-                    dispatch({ type: 'SET_HERO_IMAGE', file: null, preview: '' })
-                  }
-                />
-              </div>
+              <HeroImageConfigurator />
             </>
           )}
 
