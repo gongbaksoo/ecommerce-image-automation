@@ -46,6 +46,29 @@ export interface FontConfig {
   url?: string;
 }
 
+/** 문구 배치 위치 프리셋 */
+export type HeroContentLayout =
+  | 'text-top'       // 문구 상단
+  | 'text-center'    // 문구 중앙
+  | 'text-bottom'    // 문구 하단
+  | 'text-left';     // 문구 좌측
+
+/** 문구 배치 위치별 라벨 */
+export const HERO_CONTENT_LAYOUT_LABELS: Record<HeroContentLayout, string> = {
+  'text-top': '상단 문구',
+  'text-center': '중앙 문구',
+  'text-bottom': '하단 문구',
+  'text-left': '좌측 문구',
+};
+
+/** 문구 위치별 상품 배치 가이드 (AI 프롬프트용) */
+export const TEXT_POSITION_PRODUCT_GUIDE: Record<HeroContentLayout, string> = {
+  'text-top': 'Place the product in the lower-center area. Keep the top 30% clear for text overlay.',
+  'text-center': 'Place the product slightly off-center or at the bottom. Keep the center area clear for text overlay.',
+  'text-bottom': 'Place the product in the upper-center area. Keep the bottom 30% clear for text overlay.',
+  'text-left': 'Place the product on the right side. Keep the left 40% clear for text overlay.',
+};
+
 /** 레이아웃 유형 */
 export type LayoutType = 'hero-only' | 'products-only' | 'hero-products';
 
@@ -64,12 +87,11 @@ export interface EditorState {
 
   // Step 1.5: 레이아웃 유형
   layoutType: LayoutType;
+  heroContentLayout: HeroContentLayout;
 
   // Step 2: 콘텐츠
   heroTitle: string;
   heroTitleStyle: TextStyle;
-  heroImage: File | null;
-  heroImagePreview: string;
   products: ProductItem[];
   productColumns: 1 | 2 | 3;
   productNameStyle: TextStyle;
@@ -81,7 +103,12 @@ export interface EditorState {
   backgroundColor: string;
   backgroundImage: string | null;
   aiPrompt: string;
-  referenceImage: File | null;
+  bgProductImage: File | null;
+  bgProductImagePreview: string;
+  bgSubImages: (File | null)[];
+  bgSubImagePreviews: string[];
+  bgReferenceImage: File | null;
+  bgReferenceImagePreview: string;
 
   // 폰트
   fonts: FontConfig[];

@@ -5,7 +5,6 @@ import { useEditor } from '@/contexts/EditorContext';
 import PlatformSelector from '@/components/platform/PlatformSelector';
 import BackgroundConfigurator from '@/components/inputs/BackgroundConfigurator';
 import TextInputForm from '@/components/inputs/TextInputForm';
-import HeroImageConfigurator from '@/components/inputs/HeroImageConfigurator';
 import ProductInputForm from '@/components/inputs/ProductInputForm';
 import FontSelector from '@/components/inputs/FontSelector';
 import PreviewPanel from './PreviewPanel';
@@ -27,12 +26,7 @@ export default function EditorMain() {
           <BackgroundConfigurator />
           <FontSelector />
 
-          {showHeroInputs && (
-            <>
-              <TextInputForm />
-              <HeroImageConfigurator />
-            </>
-          )}
+          {showHeroInputs && <TextInputForm />}
 
           {showProductInputs && <ProductInputForm />}
 

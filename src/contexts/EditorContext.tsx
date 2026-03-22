@@ -7,6 +7,7 @@ import type {
   ProductItem,
   FontConfig,
   LayoutType,
+  HeroContentLayout,
 } from '@/types';
 import {
   DEFAULT_TEXT_STYLE,
@@ -20,10 +21,9 @@ const initialState: EditorState = {
   selectedPlatformId: null,
   selectedImageSpecId: null,
   layoutType: 'hero-products',
+  heroContentLayout: 'text-top',
   heroTitle: '',
   heroTitleStyle: DEFAULT_TEXT_STYLE,
-  heroImage: null,
-  heroImagePreview: '',
   products: [],
   productColumns: 3,
   productNameStyle: DEFAULT_PRODUCT_NAME_STYLE,
@@ -33,7 +33,12 @@ const initialState: EditorState = {
   backgroundColor: '#1a1a2e',
   backgroundImage: null,
   aiPrompt: '',
-  referenceImage: null,
+  bgProductImage: null,
+  bgProductImagePreview: '',
+  bgSubImages: [null, null, null],
+  bgSubImagePreviews: ['', '', ''],
+  bgReferenceImage: null,
+  bgReferenceImagePreview: '',
   fonts: [],
   selectedFont: 'sans-serif',
 };
@@ -42,9 +47,9 @@ type Action =
   | { type: 'SELECT_PLATFORM'; platformId: string | null }
   | { type: 'SELECT_IMAGE_SPEC'; specId: string | null }
   | { type: 'SET_LAYOUT_TYPE'; layoutType: LayoutType }
+  | { type: 'SET_HERO_CONTENT_LAYOUT'; layout: HeroContentLayout }
   | { type: 'SET_HERO_TITLE'; title: string }
   | { type: 'SET_HERO_TITLE_STYLE'; style: Partial<TextStyle> }
-  | { type: 'SET_HERO_IMAGE'; file: File | null; preview: string }
   | { type: 'ADD_PRODUCT' }
   | { type: 'UPDATE_PRODUCT'; id: string; data: Partial<ProductItem> }
   | { type: 'REMOVE_PRODUCT'; id: string }
@@ -56,7 +61,9 @@ type Action =
   | { type: 'SET_BACKGROUND_COLOR'; color: string }
   | { type: 'SET_BACKGROUND_IMAGE'; url: string | null }
   | { type: 'SET_AI_PROMPT'; prompt: string }
-  | { type: 'SET_REFERENCE_IMAGE'; file: File | null }
+  | { type: 'SET_BG_PRODUCT_IMAGE'; file: File | null; preview: string }
+  | { type: 'SET_BG_SUB_IMAGE'; index: number; file: File | null; preview: string }
+  | { type: 'SET_BG_REFERENCE_IMAGE'; file: File | null; preview: string }
   | { type: 'ADD_FONT'; font: FontConfig }
   | { type: 'SELECT_FONT'; family: string };
 
@@ -68,12 +75,12 @@ function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, selectedImageSpecId: action.specId };
     case 'SET_LAYOUT_TYPE':
       return { ...state, layoutType: action.layoutType };
+    case 'SET_HERO_CONTENT_LAYOUT':
+      return { ...state, heroContentLayout: action.layout };
     case 'SET_HERO_TITLE':
       return { ...state, heroTitle: action.title };
     case 'SET_HERO_TITLE_STYLE':
       return { ...state, heroTitleStyle: { ...state.heroTitleStyle, ...action.style } };
-    case 'SET_HERO_IMAGE':
-      return { ...state, heroImage: action.file, heroImagePreview: action.preview };
     case 'ADD_PRODUCT':
       return {
         ...state,
@@ -115,8 +122,17 @@ function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, backgroundImage: action.url };
     case 'SET_AI_PROMPT':
       return { ...state, aiPrompt: action.prompt };
-    case 'SET_REFERENCE_IMAGE':
-      return { ...state, referenceImage: action.file };
+    case 'SET_BG_PRODUCT_IMAGE':
+      return { ...state, bgProductImage: action.file, bgProductImagePreview: action.preview };
+    case 'SET_BG_SUB_IMAGE': {
+      const newSubImages = [...state.bgSubImages];
+      const newSubPreviews = [...state.bgSubImagePreviews];
+      newSubImages[action.index] = action.file;
+      newSubPreviews[action.index] = action.preview;
+      return { ...state, bgSubImages: newSubImages, bgSubImagePreviews: newSubPreviews };
+    }
+    case 'SET_BG_REFERENCE_IMAGE':
+      return { ...state, bgReferenceImage: action.file, bgReferenceImagePreview: action.preview };
     case 'ADD_FONT':
       return { ...state, fonts: [...state.fonts, action.font] };
     case 'SELECT_FONT':

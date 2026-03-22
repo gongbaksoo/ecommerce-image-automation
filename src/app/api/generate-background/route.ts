@@ -2,7 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, width, height, apiKey: clientApiKey, model: clientModel } = await request.json();
+    const {
+      prompt,
+      width,
+      height,
+      apiKey: clientApiKey,
+      model: clientModel,
+      productImage,
+      subImage1,
+      subImage2,
+      subImage3,
+      referenceImage,
+      textPositionGuide,
+    } = await request.json();
 
     // 클라이언트에서 전달받은 키 우선, 없으면 환경변수
     const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
@@ -17,14 +29,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'prompt가 필요합니다' }, { status: 400 });
     }
 
-    const systemPrompt = [
-      `Create an event promotion background image for an e-commerce banner.`,
+    // 글로벌 규칙: 상품 이미지 원본 보존
+    const PRODUCT_IMAGE_RULE = [
+      `[GLOBAL RULE - PRODUCT IMAGE PRESERVATION]`,
+      `The main product image MUST remain EXACTLY as provided.`,
+      `- DO NOT alter the product's shape, color, texture, design, logo, or any visual detail.`,
+      `- You MAY adjust the product's angle or orientation slightly.`,
+      `- The product must be the focal point of the final image.`,
+      `- Only the background, staging, lighting, and surrounding environment may be generated or modified.`,
+    ].join('\n');
+
+    const systemPromptParts = [
+      `Create a product staging/lifestyle photo for an e-commerce banner.`,
       `Size: ${width || 1200}x${height || 800} pixels.`,
       `Style: Clean, professional, visually appealing.`,
-      `IMPORTANT: Do NOT include any text, letters, numbers, or words in the image.`,
-      `Leave empty space for product images and text overlays.`,
+      PRODUCT_IMAGE_RULE,
+      textPositionGuide ? `[TEXT OVERLAY ZONE] ${textPositionGuide}` : '',
+      `IMPORTANT: Do NOT include any text, letters, numbers, or words in the image. Text will be overlaid separately.`,
+      referenceImage ? `Use the provided reference image as a style/mood guide for the background and staging.` : '',
       `User request: ${prompt}`,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 
     const modelId = clientModel || 'gemini-2.0-flash-exp';
     const isImagen = modelId.startsWith('imagen');
@@ -39,7 +63,7 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            instances: [{ prompt: systemPrompt }],
+            instances: [{ prompt: systemPromptParts }],
             parameters: {
               sampleCount: 1,
               aspectRatio: width && height ? `${width}:${height}` : '16:9',
@@ -69,13 +93,56 @@ export async function POST(request: NextRequest) {
       imageUrl = `data:image/png;base64,${prediction.bytesBase64Encoded}`;
     } else {
       // Gemini generateContent API — 이미지 생성 모드
+      // base64 data URL에서 mimeType과 데이터 추출하는 헬퍼
+      const parseBase64 = (dataUrl: string) => {
+        const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+        return match ? { mimeType: match[1], data: match[2] } : null;
+      };
+
+      // 멀티모달 파트 구성: 텍스트 프롬프트 + 상품 이미지 + 레퍼런스 이미지
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestParts: any[] = [
+        { text: systemPromptParts },
+      ];
+
+      if (productImage) {
+        const parsed = parseBase64(productImage);
+        if (parsed) {
+          requestParts.push({ inlineData: parsed });
+          requestParts.push({ text: 'Above is the main product image. Preserve it EXACTLY — do NOT change its shape, color, texture, or design. You may only adjust the angle slightly. This is the primary/hero product.' });
+        }
+      }
+
+      const subImages = [
+        { data: subImage1, name: '서브 이미지 1 (Sub Image 1)' },
+        { data: subImage2, name: '서브 이미지 2 (Sub Image 2)' },
+        { data: subImage3, name: '서브 이미지 3 (Sub Image 3)' },
+      ];
+      for (const sub of subImages) {
+        if (sub.data) {
+          const parsed = parseBase64(sub.data);
+          if (parsed) {
+            requestParts.push({ inlineData: parsed });
+            requestParts.push({ text: `Above is ${sub.name}. Include this item in the scene alongside the main product. Preserve its appearance exactly. Place it naturally as a secondary/supporting element.` });
+          }
+        }
+      }
+
+      if (referenceImage) {
+        const parsed = parseBase64(referenceImage);
+        if (parsed) {
+          requestParts.push({ inlineData: parsed });
+          requestParts.push({ text: 'Above is a reference/mood image. Use it as a style guide for the background and staging only.' });
+        }
+      }
+
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: systemPrompt }] }],
+            contents: [{ parts: requestParts }],
             generationConfig: {
               responseModalities: ['IMAGE', 'TEXT'],
             },
@@ -94,17 +161,17 @@ export async function POST(request: NextRequest) {
       }
 
       const data = await res.json();
-      const parts = data?.candidates?.[0]?.content?.parts;
-      if (!parts) {
+      const responseParts = data?.candidates?.[0]?.content?.parts;
+      if (!responseParts) {
         return NextResponse.json(
           { error: 'AI 응답에서 이미지를 찾을 수 없습니다. 다른 모델을 시도해주세요.' },
           { status: 500 }
         );
       }
 
-      const imagePart = parts.find(
-        (p: { inlineData?: { mimeType: string; data: string } }) =>
-          p.inlineData?.mimeType?.startsWith('image/')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const imagePart = responseParts.find(
+        (p: any) => p.inlineData?.mimeType?.startsWith('image/')
       );
 
       if (!imagePart?.inlineData) {

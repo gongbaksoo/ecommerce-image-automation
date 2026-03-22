@@ -94,11 +94,12 @@
        │
        ▼
 [2. 콘텐츠 입력]
-  메인 문구 + 연출 이미지 + 개별 상품(이미지/이름/구성/가격) + 폰트 + 열 수 + (레퍼런스)
+  메인 문구 + 메인 상품 이미지 + 서브 이미지(최대 3개) + 개별 상품(이미지/이름/구성/가격) + 폰트 + 열 수 + (레퍼런스)
        │
        ▼
 [3. AI 배경 생성 (선택)]
-  사용자 프롬프트/레퍼런스 → API Route → Gemini API → 배경 이미지 URL 반환
+  메인 상품 이미지 + 서브 이미지(최대 3개) + 프롬프트 + 문구 위치 가이드 + 레퍼런스 → API Route → Gemini API → 상품이 포함된 배경 이미지 URL 반환
+  ※ AI는 문구 배치 위치(상단/중앙/하단/좌측)를 피해 상품을 배치
        │
        ▼
 [4. HTML/CSS 실시간 미리보기]
@@ -200,12 +201,11 @@ interface EditorState {
 
   // Step 1.5: 레이아웃 유형
   layoutType: LayoutType;               // 'hero-only' | 'products-only' | 'hero-products'
+  heroContentLayout: HeroContentLayout; // 문구 배치 위치 ('text-top' | 'text-center' | 'text-bottom' | 'text-left')
 
   // Step 2: 콘텐츠
   heroTitle: string;                    // 행사 메인 문구
   heroTitleStyle: TextStyle;            // 메인 문구 스타일
-  heroImage: File | null;              // 메인 상품 연출 이미지
-  heroImagePreview: string;
   products: ProductItem[];              // 행사 상품 목록
   productColumns: 1 | 2 | 3;           // 하단 상품 열 수
   productNameStyle: TextStyle;          // 상품명 스타일
@@ -217,7 +217,12 @@ interface EditorState {
   backgroundColor: string;             // 배경색 (hex)
   backgroundImage: string | null;      // AI 생성 or 업로드 배경 이미지 URL
   aiPrompt: string;                    // AI 배경 생성 프롬프트
-  referenceImage: File | null;         // 레퍼런스 이미지
+  bgProductImage: File | null;         // 메인 상품 이미지 (AI 배경에 포함)
+  bgProductImagePreview: string;
+  bgSubImages: (File | null)[];        // 서브 이미지 (최대 3개, AI 배경에 포함)
+  bgSubImagePreviews: string[];
+  bgReferenceImage: File | null;       // 레퍼런스 이미지 (스타일 참고용)
+  bgReferenceImagePreview: string;
 
   // 폰트
   fonts: FontConfig[];                 // 사용 가능한 폰트 목록
@@ -326,7 +331,13 @@ Imagen 모델은 `predict` 엔드포인트를 사용합니다.
   "prompt": "봄 분위기의 밝은 파스텔톤 행사 배경, 꽃잎과 리본 장식",
   "apiKey": "AIza...",
   "model": "gemini-2.0-flash-exp",
+  "productImage": "data:image/png;base64,...",
+  "subImage1": "data:image/png;base64,...",
+  "subImage2": "data:image/png;base64,...",
+  "subImage3": null,
   "referenceImage": "data:image/png;base64,...",
+  "textPosition": "text-top",
+  "textPositionGuide": "Place the product in the lower-center area. Keep the top 30% clear for text overlay.",
   "width": 1240,
   "height": 400
 }
@@ -467,9 +478,13 @@ export async function POST(request: Request) {
 │  │ ● 히어로+상품 (기획전)  │    │  │  │상품1│상품2│상품3│  │    │
 │  └───────────────────────┘    │  │  │가격 │가격 │가격 │  │    │
 │  ┌───────────────────────┐    │  │  └───────────────────┘  │    │
-│  │ 3. 배경 설정            │    │  │                         │    │
-│  │ ● AI 생성  ○ 업로드     │    │  └─────────────────────────┘    │
+│  │ 3. 배경 & 레이아웃 설정  │    │  │                         │    │
+│  │ 콘텐츠 배치:             │    │  └─────────────────────────┘    │
+│  │ [상단][중앙][하단][좌측] │    │                                 │
+│  │ ● AI 생성  ○ 업로드     │    │                                 │
 │  │ ○ 단색                  │    │                                 │
+│  │ [메인 상품 이미지 *]    │    │                                 │
+│  │ [서브 이미지 1~3 선택]  │    │                                 │
 │  │ [프롬프트 입력...]      │    │                                 │
 │  │ [레퍼런스 이미지 업로드] │    │                                 │
 │  │ [배경 생성하기]         │    │                                 │
@@ -481,11 +496,7 @@ export async function POST(request: Request) {
 │  │ 크기: [48px] 색상: [#] │    │                                 │
 │  └───────────────────────┘    │                                 │
 │  ┌───────────────────────┐    │                                 │
-│  │ 5. 메인 연출 이미지     │    │                                 │
-│  │ [이미지 업로드 영역]    │    │                                 │
-│  └───────────────────────┘    │                                 │
-│  ┌───────────────────────┐    │                                 │
-│  │ 6. 행사 상품 목록       │    │                                 │
+│  │ 5. 행사 상품 목록       │    │                                 │
 │  │ 열 수: [1열|2열|3열]   │    │                                 │
 │  │                        │    │                                 │
 │  │ ┌─ 상품 1 ──────────┐ │    │                                 │
@@ -526,17 +537,20 @@ export async function POST(request: Request) {
   │     ├── 상품만 (썸네일용) → 상품 그리드만 표시
   │     └── 히어로+상품 (기획전) → 전체 2단 표시
   │
-  ├── Step 2: 배경 설정
-  │     ├── AI 생성: 프롬프트 입력 → [생성] → 배경 적용
+  ├── Step 2: 배경 & 레이아웃 설정
+  │     ├── 문구 위치 선택: 상단/중앙/하단/좌측 프리셋
+  │     ├── AI 생성:
+  │     │     ├── 메인 상품 이미지 업로드 (필수)
+  │     │     ├── 서브 이미지 1~3 업로드 (선택, 최대 3개)
+  │     │     ├── 프롬프트 입력
+  │     │     └── [배경 생성] → AI가 문구 위치를 피해 상품 배치한 배경 생성
   │     ├── 직접 업로드: 이미지 파일 업로드
   │     └── 단색: 색상 피커로 선택
   │
   ├── Step 3: 메인 문구 입력
   │     └── 텍스트 + 폰트/크기/색상 설정
   │
-  ├── Step 4: 메인 연출 이미지 업로드
-  │
-  ├── Step 5: 행사 상품 입력 (N개 반복)
+  ├── Step 4: 행사 상품 입력 (N개 반복)
   │     ├── 상품 이미지 업로드
   │     ├── 상품명 / 구성 설명 입력
   │     ├── 원가 / 할인가 입력
@@ -563,9 +577,7 @@ export async function POST(request: Request) {
 │   │  {행사 메인 문구}                 │  │
 │   │  (HTML <h1>, CSS font-family,    │  │
 │   │   font-size, color, text-shadow) │  │
-│   │                                  │  │
-│   │  [메인 연출 이미지]               │  │
-│   │  (position: absolute/relative)   │  │
+│   │  (위치: 상단/중앙/하단/좌측)     │  │
 │   └──────────────────────────────────┘  │
 │                                          │
 │ [Layer 3: 하단 상품 안내 영역]           │
@@ -598,7 +610,7 @@ export async function POST(request: Request) {
 | `ImageSpecFormModal` | components/settings/ | 이미지 종류 추가/수정 모달 | ✅ |
 | `PlatformSelector` | components/platform/ | 쇼핑몰/이미지 종류 드롭다운 + 레이아웃 유형 선택 | ✅ |
 | `EditorMain` | components/editor/ | 편집기 전체 레이아웃 (좌측 설정 + 우측 미리보기) | ✅ |
-| `HeroSection` | components/editor/ | 상단 히어로 렌더링 (문구 + 연출 이미지, flex 기반) | ✅ |
+| `HeroSection` | components/editor/ | 상단 히어로 렌더링 (문구 위치 배치: 상단/중앙/하단/좌측, flex 기반) | ✅ |
 | `ProductGrid` | components/editor/ | 하단 상품 그리드 (1/2/3열, flex:1 + alignContent:end) | ✅ |
 | `ProductCard` | components/editor/ | 개별 상품 카드 (이미지 maxHeight:120px + 텍스트) | ✅ |
 | `PreviewPanel` | components/editor/ | 실시간 미리보기 (scale 기반 축소, renderRef 포함) | ✅ |
@@ -606,7 +618,7 @@ export async function POST(request: Request) {
 | `TextInputForm` | components/inputs/ | 문구 입력 + 스타일(폰트/크기/색상) 설정 | ✅ |
 | `ProductInputForm` | components/inputs/ | 상품 정보 입력 + 열 수 선택 (통합) | ✅ |
 | `FontSelector` | components/inputs/ | 기본 폰트 선택 + 커스텀 폰트 업로드 (FontFace API) | ✅ |
-| `BackgroundConfigurator` | components/inputs/ | 배경 설정 (단색/업로드/AI) + 모델 선택 + 레퍼런스 이미지 | ✅ |
+| `BackgroundConfigurator` | components/inputs/ | 배경 설정 (단색/업로드/AI) + 문구 위치 프리셋 + 메인 상품/서브 이미지 + 모델 선택 + 레퍼런스 이미지 | ✅ |
 | `ExportButton` | components/export/ | 이미지 생성(html2canvas) + PNG/JPG 다운로드 | ✅ |
 | `Button/Input/Modal/Toast/Navigation` | components/ui/ | 공통 UI 컴포넌트 | ✅ |
 
@@ -681,7 +693,9 @@ EditorContext (전역 상태)
 ├── selectedPlatforms        ← PlatformSelector
 ├── selectedImageSpecs       ← ImageTypeSelector
 ├── heroTitle / heroTitleStyle ← TextInputForm
-├── heroImage                ← ImageUploader
+├── bgProductImage            ← BackgroundConfigurator (메인 상품)
+├── bgSubImages[0..2]        ← BackgroundConfigurator (서브 이미지 1~3)
+├── heroContentLayout        ← BackgroundConfigurator (문구 위치 프리셋)
 ├── products[]               ← ProductInputForm
 ├── productColumns           ← ColumnSelector
 ├── backgroundType/Image     ← BackgroundConfigurator
@@ -708,8 +722,6 @@ interface EditorContextType {
     // 콘텐츠 입력
     setHeroTitle: (title: string) => void;
     setHeroTitleStyle: (style: Partial<TextStyle>) => void;
-    setHeroImage: (file: File | null) => void;
-
     // 상품 관리
     addProduct: () => void;
     updateProduct: (id: string, data: Partial<ProductItem>) => void;
@@ -721,7 +733,10 @@ interface EditorContextType {
     setBackgroundImage: (url: string) => void;
     setBackgroundColor: (color: string) => void;
     setAiPrompt: (prompt: string) => void;
+    setBgProductImage: (file: File | null) => void;
+    setBgSubImage: (index: number, file: File | null) => void;
     setReferenceImage: (file: File | null) => void;
+    setHeroContentLayout: (layout: HeroContentLayout) => void;
 
     // 폰트
     addCustomFont: (file: File) => void;
@@ -789,7 +804,7 @@ interface EditorContextType {
 │   │
 │   ├── editor/
 │   │   ├── EditorMain.tsx                # 편집기 메인 (좌설정 + 우미리보기)
-│   │   ├── HeroSection.tsx               # 상단 히어로 (문구 + 연출이미지, flex)
+│   │   ├── HeroSection.tsx               # 상단 히어로 (문구 위치 배치, flex)
 │   │   ├── ProductGrid.tsx               # 하단 상품 그리드 (flex:1, alignContent:end)
 │   │   ├── ProductCard.tsx               # 개별 상품 카드 (이미지 maxHeight:120px)
 │   │   └── PreviewPanel.tsx              # 미리보기 (scale + renderRef 포함)
@@ -799,7 +814,7 @@ interface EditorContextType {
 │   │   ├── TextInputForm.tsx             # 문구 + 스타일 설정
 │   │   ├── ProductInputForm.tsx          # 상품 정보 입력 + 열 수 선택 (통합)
 │   │   ├── FontSelector.tsx              # 폰트 선택 + 업로드 (FontFace API)
-│   │   └── BackgroundConfigurator.tsx    # 배경 (단색/업로드/AI) + 모델 선택
+│   │   └── BackgroundConfigurator.tsx    # 배경 (단색/업로드/AI) + 문구 위치 + 메인/서브 이미지 + 모델 선택
 │   │
 │   ├── export/
 │   │   └── ExportButton.tsx              # 이미지 생성(html2canvas) + 다운로드
@@ -895,3 +910,4 @@ Phase 8: 마무리                                          ✅ Done
 |---------|------|---------|--------|
 | 0.1 | 2026-03-18 | Initial draft | jeongjihye |
 | 0.2 | 2026-03-19 | 구현 완료 반영: 파일 구조/컴포넌트/API/구현순서 실제와 동기화. API 키 설정(ApiKeyManager), 모델 조회(/api/list-models), 레이아웃 유형(LayoutType), 미리보기 렌더링 개선(ProductCard maxHeight, ProductGrid flex) 반영 | jeongjihye |
+| 0.3 | 2026-03-22 | 구조 변경: heroImage 제거 → 메인 상품을 AI 배경에 포함. 문구 위치 프리셋(text-top/center/bottom/left). 서브 이미지(최대 3개) 추가. API에 textPositionGuide/subImage1~3 전달. EditorState/Context/UI/API 전체 반영 | jeongjihye |

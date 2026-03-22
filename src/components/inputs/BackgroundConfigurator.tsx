@@ -3,7 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useEditor } from '@/contexts/EditorContext';
+import type { HeroContentLayout } from '@/types';
+import { TEXT_POSITION_PRODUCT_GUIDE } from '@/types';
 import { getGeminiApiKey, getGeminiModel, loadApiSettings, saveApiSettings } from '@/lib/storage/apiKeyStorage';
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 import { showToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
@@ -26,6 +37,20 @@ export default function BackgroundConfigurator() {
     setIsGenerating(true);
     setError(null);
     try {
+      let productImageBase64: string | undefined;
+      if (state.bgProductImage) {
+        productImageBase64 = await fileToBase64(state.bgProductImage);
+      }
+
+      const subImages: (string | null)[] = await Promise.all(
+        state.bgSubImages.map((f) => (f ? fileToBase64(f) : Promise.resolve(null)))
+      );
+
+      let referenceImageBase64: string | undefined;
+      if (state.bgReferenceImage) {
+        referenceImageBase64 = await fileToBase64(state.bgReferenceImage);
+      }
+
       const res = await fetch('/api/generate-background', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,6 +60,13 @@ export default function BackgroundConfigurator() {
           model: currentModel,
           width: 1200,
           height: 800,
+          productImage: productImageBase64,
+          subImage1: subImages[0] ?? undefined,
+          subImage2: subImages[1] ?? undefined,
+          subImage3: subImages[2] ?? undefined,
+          referenceImage: referenceImageBase64,
+          textPosition: state.heroContentLayout,
+          textPositionGuide: TEXT_POSITION_PRODUCT_GUIDE[state.heroContentLayout],
         }),
       });
       const data = await res.json();
@@ -52,10 +84,89 @@ export default function BackgroundConfigurator() {
     }
   };
 
+  const presets: { id: HeroContentLayout; label: string; icon: React.ReactNode }[] = [
+    {
+      id: 'text-top',
+      label: '상단 문구',
+      icon: (
+        <svg viewBox="0 0 48 48" className="w-full h-full">
+          <rect x="4" y="4" width="40" height="40" rx="4" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="1.5" />
+          <rect x="10" y="8" width="28" height="4" rx="1" fill="#6b7280" />
+          <rect x="14" y="14" width="20" height="3" rx="1" fill="#9ca3af" />
+          <circle cx="24" cy="32" r="8" fill="#93c5fd" opacity="0.5" />
+        </svg>
+      ),
+    },
+    {
+      id: 'text-center',
+      label: '중앙 문구',
+      icon: (
+        <svg viewBox="0 0 48 48" className="w-full h-full">
+          <rect x="4" y="4" width="40" height="40" rx="4" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="1.5" />
+          <rect x="12" y="20" width="24" height="4" rx="1" fill="#6b7280" />
+          <rect x="16" y="26" width="16" height="3" rx="1" fill="#9ca3af" />
+          <circle cx="24" cy="38" r="5" fill="#93c5fd" opacity="0.5" />
+        </svg>
+      ),
+    },
+    {
+      id: 'text-bottom',
+      label: '하단 문구',
+      icon: (
+        <svg viewBox="0 0 48 48" className="w-full h-full">
+          <rect x="4" y="4" width="40" height="40" rx="4" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="1.5" />
+          <circle cx="24" cy="18" r="8" fill="#93c5fd" opacity="0.5" />
+          <rect x="10" y="32" width="28" height="4" rx="1" fill="#6b7280" />
+          <rect x="14" y="38" width="20" height="3" rx="1" fill="#9ca3af" />
+        </svg>
+      ),
+    },
+    {
+      id: 'text-left',
+      label: '좌측 문구',
+      icon: (
+        <svg viewBox="0 0 48 48" className="w-full h-full">
+          <rect x="4" y="4" width="40" height="40" rx="4" fill="#f3f4f6" stroke="#d1d5db" strokeWidth="1.5" />
+          <rect x="8" y="16" width="16" height="4" rx="1" fill="#6b7280" />
+          <rect x="8" y="22" width="14" height="3" rx="1" fill="#9ca3af" />
+          <rect x="8" y="27" width="12" height="3" rx="1" fill="#9ca3af" />
+          <circle cx="35" cy="24" r="8" fill="#93c5fd" opacity="0.5" />
+        </svg>
+      ),
+    },
+  ];
+
+  const showPresets = state.layoutType === 'hero-only' || state.layoutType === 'hero-products';
+
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">3. 배경 설정</h3>
+      <h3 className="mb-3 text-sm font-semibold text-gray-900">3. 배경 & 레이아웃 설정</h3>
 
+      {/* 레이아웃 프리셋 */}
+      {showPresets && (
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-medium text-gray-700">콘텐츠 배치</p>
+          <div className="grid grid-cols-4 gap-2">
+            {presets.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => dispatch({ type: 'SET_HERO_CONTENT_LAYOUT', layout: p.id })}
+                className={`flex flex-col items-center gap-1 rounded-lg border-2 p-2 transition-colors ${
+                  state.heroContentLayout === p.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="w-10 h-10">{p.icon}</div>
+                <span className="text-[10px] text-gray-600 leading-tight text-center">{p.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 배경 타입 선택 */}
+      <p className="mb-2 text-xs font-medium text-gray-700">배경</p>
       <div className="mb-3 flex gap-3">
         {(['color', 'upload', 'ai'] as const).map((t) => (
           <label key={t} className="flex items-center gap-1.5 cursor-pointer">
@@ -100,6 +211,49 @@ export default function BackgroundConfigurator() {
 
       {state.backgroundType === 'ai' && (
         <div className="flex flex-col gap-3">
+          {/* 메인 상품 이미지 */}
+          <div>
+            <p className="mb-1 text-xs font-medium text-gray-700">
+              메인 상품 이미지 <span className="text-red-500">*</span>
+            </p>
+            <p className="mb-2 text-[11px] text-gray-500">
+              상품의 형태/색상/디자인은 원본 그대로 유지됩니다.
+            </p>
+            <ImageUploader
+              label="상품 이미지"
+              preview={state.bgProductImagePreview}
+              onUpload={(file, preview) =>
+                dispatch({ type: 'SET_BG_PRODUCT_IMAGE', file, preview })
+              }
+              onRemove={() =>
+                dispatch({ type: 'SET_BG_PRODUCT_IMAGE', file: null, preview: '' })
+              }
+            />
+          </div>
+
+          {/* 서브 이미지 1~3 */}
+          <div>
+            <p className="mb-1 text-xs font-medium text-gray-700">서브 이미지 (선택, 최대 3개)</p>
+            <p className="mb-2 text-[11px] text-gray-500">
+              함께 배치할 추가 상품/소품 이미지를 등록하세요.
+            </p>
+            <div className="flex flex-col gap-2">
+              {[0, 1, 2].map((i) => (
+                <ImageUploader
+                  key={i}
+                  label={`서브 이미지 ${i + 1}`}
+                  preview={state.bgSubImagePreviews[i]}
+                  onUpload={(file, preview) =>
+                    dispatch({ type: 'SET_BG_SUB_IMAGE', index: i, file, preview })
+                  }
+                  onRemove={() =>
+                    dispatch({ type: 'SET_BG_SUB_IMAGE', index: i, file: null, preview: '' })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-500">모델</label>
             <div className="flex items-center gap-2">
@@ -129,11 +283,11 @@ export default function BackgroundConfigurator() {
           />
           <ImageUploader
             label="레퍼런스 이미지 (선택)"
-            preview={state.referenceImage ? URL.createObjectURL(state.referenceImage) : ''}
-            onUpload={(file) =>
-              dispatch({ type: 'SET_REFERENCE_IMAGE', file })
+            preview={state.bgReferenceImagePreview}
+            onUpload={(file, preview) =>
+              dispatch({ type: 'SET_BG_REFERENCE_IMAGE', file, preview })
             }
-            onRemove={() => dispatch({ type: 'SET_REFERENCE_IMAGE', file: null })}
+            onRemove={() => dispatch({ type: 'SET_BG_REFERENCE_IMAGE', file: null, preview: '' })}
           />
           {!getGeminiApiKey() && (
             <div className="rounded-md bg-yellow-50 px-3 py-2 text-sm text-yellow-700">
