@@ -19,9 +19,12 @@ export default function BackgroundCropSelector() {
   useEffect(() => {
     if (!state.backgroundImage) return;
     const img = new Image();
-    img.onload = () => setImgNatural({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onload = () => {
+      setImgNatural({ w: img.naturalWidth, h: img.naturalHeight });
+      dispatch({ type: 'SET_BG_IMAGE_SIZE', w: img.naturalWidth, h: img.naturalHeight });
+    };
     img.src = state.backgroundImage;
-  }, [state.backgroundImage]);
+  }, [state.backgroundImage, dispatch]);
 
   const layout = useMemo(() => {
     if (!spec || imgNatural.w === 0) return null;

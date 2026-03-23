@@ -233,6 +233,8 @@ interface EditorState {
   bgCropX: number;                     // 크롭 위치 X (0~100%)
   bgCropY: number;                     // 크롭 위치 Y (0~100%)
   bgCropZoom: number;                  // 크롭 줌 배율 (1~3)
+  bgImageNatW: number;                 // 원본 이미지 너비 (크롭↔미리보기 동기화용)
+  bgImageNatH: number;                 // 원본 이미지 높이
 
   // 폰트
   fonts: FontConfig[];                 // 사용 가능한 폰트 목록
@@ -630,6 +632,7 @@ export async function POST(request: Request) {
 | `FontSelector` | components/inputs/ | 기본 폰트 선택 + 커스텀 폰트 업로드 (FontFace API) | ✅ |
 | `BackgroundConfigurator` | components/inputs/ | 배경 설정 (단색/업로드/AI) + 문구 위치 프리셋 + 메인 상품/서브 이미지 + 모델 선택 + 레퍼런스 이미지 | ✅ |
 | `BackgroundCropSelector` | components/inputs/ | AI 생성 배경 크롭 영역 선택 (드래그 이동 + 줌 100%~300%) | ✅ |
+| `CodePanel` | components/editor/ | 실시간 HTML/CSS 코드 출력 + 복사 버튼 | ✅ |
 | `ExportButton` | components/export/ | 이미지 생성(html2canvas) + PNG/JPG 다운로드 | ✅ |
 | `Button/Input/Modal/Toast/Navigation` | components/ui/ | 공통 UI 컴포넌트 | ✅ |
 
@@ -924,3 +927,4 @@ Phase 8: 마무리                                          ✅ Done
 | 0.3 | 2026-03-22 | 구조 변경: heroImage 제거 → 메인 상품을 AI 배경에 포함. 문구 위치 프리셋(text-top/center/bottom/left). 서브 이미지(최대 3개) 추가. API에 textPositionGuide/subImage1~3 전달. EditorState/Context/UI/API 전체 반영 | jeongjihye |
 | 0.4 | 2026-03-23 | 서브 문구 3개(heroSubText1~3) 추가. BackgroundCropSelector 컴포넌트 신규(드래그+줌). bgCropX/Y/Zoom state 추가. 규격별 동적 이미지 크기 요청. API 프롬프트에 종횡비 강화 | jeongjihye |
 | 0.5 | 2026-03-23 | 문구 통합 배경(heroTextBg: TextBg) 추가 — 단색/그라데이션/블러 3종. 개별 문구 배경 제거. AI 프롬프트 개선: 배경 전체 채움 규칙 + 상품 위치만 조절 | jeongjihye |
+| 0.6 | 2026-03-23 | CodePanel 컴포넌트 추가. 3단 레이아웃(설정/미리보기/코드). PreviewPanel 배경-콘텐츠 레이어 분리(absolute img + relative 콘텐츠). bgImageNatW/H state 추가하여 크롭↔미리보기 동일 계산 보장 | jeongjihye |

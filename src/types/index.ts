@@ -139,9 +139,11 @@ export interface EditorState {
   bgSubImagePreviews: string[];
   bgReferenceImage: File | null;
   bgReferenceImagePreview: string;
-  bgCropX: number;     // 0~100 (%)
-  bgCropY: number;     // 0~100 (%)
-  bgCropZoom: number;  // 1~3 (배율)
+  bgCropX: number;          // 0~100 (%)
+  bgCropY: number;          // 0~100 (%)
+  bgCropZoom: number;       // 1~3 (배율)
+  bgImageNatW: number;      // 원본 이미지 너비
+  bgImageNatH: number;      // 원본 이미지 높이
 
   // 폰트
   fonts: FontConfig[];

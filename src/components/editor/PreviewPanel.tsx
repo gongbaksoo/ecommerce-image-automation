@@ -30,21 +30,41 @@ export default function PreviewPanel({ renderRef }: PreviewPanelProps) {
   const maxPreviewWidth = 600;
   const scale = Math.min(1, maxPreviewWidth / spec.width);
 
-  const backgroundStyle: React.CSSProperties = {
+  const containerStyle: React.CSSProperties = {
     width: `${spec.width}px`,
     height: `${spec.height}px`,
     position: 'relative',
     overflow: 'hidden',
-    ...(state.backgroundType === 'color'
-      ? { backgroundColor: state.backgroundColor }
-      : state.backgroundImage
-        ? {
-            backgroundImage: `url(${state.backgroundImage})`,
-            backgroundSize: state.bgCropZoom > 1 ? `${state.bgCropZoom * 100}%` : 'cover',
-            backgroundPosition: `${state.bgCropX}% ${state.bgCropY}%`,
-          }
-        : { backgroundColor: state.backgroundColor }),
+    backgroundColor: state.backgroundColor,
   };
+
+  // 배경 이미지 레이어 (크롭 선택기와 동일한 계산)
+  const hasBgImage = state.backgroundType !== 'color' && state.backgroundImage && state.bgImageNatW > 0;
+
+  let bgImageStyle: React.CSSProperties | null = null;
+  if (hasBgImage) {
+    const natW = state.bgImageNatW;
+    const natH = state.bgImageNatH;
+    // cover 방식: 규격 영역을 완전히 채우는 최소 스케일
+    const baseScale = Math.max(spec.width / natW, spec.height / natH);
+    const imgScale = baseScale * state.bgCropZoom;
+    const imgW = natW * imgScale;
+    const imgH = natH * imgScale;
+    // 이동 가능 범위
+    const maxOffsetX = imgW - spec.width;
+    const maxOffsetY = imgH - spec.height;
+    const offsetX = (state.bgCropX / 100) * maxOffsetX;
+    const offsetY = (state.bgCropY / 100) * maxOffsetY;
+
+    bgImageStyle = {
+      position: 'absolute',
+      left: `${-offsetX}px`,
+      top: `${-offsetY}px`,
+      width: `${imgW}px`,
+      height: `${imgH}px`,
+      zIndex: 0,
+    };
+  }
 
   const showHero = state.layoutType === 'hero-only' || state.layoutType === 'hero-products';
   const showProducts = state.layoutType === 'products-only' || state.layoutType === 'hero-products';
@@ -61,33 +81,43 @@ export default function PreviewPanel({ renderRef }: PreviewPanelProps) {
       </div>
 
       <div ref={containerRef} className="overflow-auto rounded-lg border border-gray-200 bg-gray-100 p-4">
-        {/* 외부 wrapper: scale 후 실제 표시 영역 크기 확보 */}
         <div
           style={{
             width: `${spec.width * scale}px`,
             height: `${spec.height * scale}px`,
           }}
         >
-          {/* scale 적용 컨테이너 */}
           <div
             style={{
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}
           >
-            {/* html2canvas 캡처 대상 (원본 크기) */}
-            <div ref={renderRef} style={backgroundStyle}>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-              }}
-            >
-              {showHero && <HeroSection />}
-              {showProducts && <ProductGrid />}
+            {/* html2canvas 캡처 대상 */}
+            <div ref={renderRef} style={containerStyle}>
+              {/* 배경 이미지 레이어 (absolute) */}
+              {bgImageStyle && (
+                <img
+                  src={state.backgroundImage!}
+                  alt=""
+                  style={bgImageStyle}
+                  draggable={false}
+                />
+              )}
+              {/* 콘텐츠 레이어 (relative, 항상 규격 기준 고정) */}
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
+                {showHero && <HeroSection />}
+                {showProducts && <ProductGrid />}
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </div>

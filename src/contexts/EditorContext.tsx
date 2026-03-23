@@ -52,6 +52,8 @@ const initialState: EditorState = {
   bgCropX: 50,
   bgCropY: 50,
   bgCropZoom: 1,
+  bgImageNatW: 0,
+  bgImageNatH: 0,
   fonts: [],
   selectedFont: 'sans-serif',
 };
@@ -86,6 +88,7 @@ type Action =
   | { type: 'SET_BG_REFERENCE_IMAGE'; file: File | null; preview: string }
   | { type: 'SET_BG_CROP'; x: number; y: number }
   | { type: 'SET_BG_CROP_ZOOM'; zoom: number }
+  | { type: 'SET_BG_IMAGE_SIZE'; w: number; h: number }
   | { type: 'ADD_FONT'; font: FontConfig }
   | { type: 'SELECT_FONT'; family: string };
 
@@ -155,11 +158,13 @@ function editorReducer(state: EditorState, action: Action): EditorState {
     case 'SET_BACKGROUND_COLOR':
       return { ...state, backgroundColor: action.color };
     case 'SET_BACKGROUND_IMAGE':
-      return { ...state, backgroundImage: action.url, bgCropX: 50, bgCropY: 50, bgCropZoom: 1 };
+      return { ...state, backgroundImage: action.url, bgCropX: 50, bgCropY: 50, bgCropZoom: 1, bgImageNatW: 0, bgImageNatH: 0 };
     case 'SET_BG_CROP':
       return { ...state, bgCropX: action.x, bgCropY: action.y };
     case 'SET_BG_CROP_ZOOM':
       return { ...state, bgCropZoom: action.zoom };
+    case 'SET_BG_IMAGE_SIZE':
+      return { ...state, bgImageNatW: action.w, bgImageNatH: action.h };
     case 'SET_AI_PROMPT':
       return { ...state, aiPrompt: action.prompt };
     case 'SET_BG_PRODUCT_IMAGE':
