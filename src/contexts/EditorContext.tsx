@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import {
   DEFAULT_TEXT_STYLE,
+  DEFAULT_SUB_TEXT_STYLE,
   DEFAULT_PRODUCT_NAME_STYLE,
   DEFAULT_PRODUCT_DESC_STYLE,
   DEFAULT_PRODUCT_PRICE_STYLE,
@@ -22,8 +23,14 @@ const initialState: EditorState = {
   selectedImageSpecId: null,
   layoutType: 'hero-products',
   heroContentLayout: 'text-top',
+  heroSubText1: '',
+  heroSubText1Style: DEFAULT_SUB_TEXT_STYLE,
   heroTitle: '',
   heroTitleStyle: DEFAULT_TEXT_STYLE,
+  heroSubText2: '',
+  heroSubText2Style: DEFAULT_SUB_TEXT_STYLE,
+  heroSubText3: '',
+  heroSubText3Style: DEFAULT_SUB_TEXT_STYLE,
   products: [],
   productColumns: 3,
   productNameStyle: DEFAULT_PRODUCT_NAME_STYLE,
@@ -39,6 +46,9 @@ const initialState: EditorState = {
   bgSubImagePreviews: ['', '', ''],
   bgReferenceImage: null,
   bgReferenceImagePreview: '',
+  bgCropX: 50,
+  bgCropY: 50,
+  bgCropZoom: 1,
   fonts: [],
   selectedFont: 'sans-serif',
 };
@@ -48,8 +58,14 @@ type Action =
   | { type: 'SELECT_IMAGE_SPEC'; specId: string | null }
   | { type: 'SET_LAYOUT_TYPE'; layoutType: LayoutType }
   | { type: 'SET_HERO_CONTENT_LAYOUT'; layout: HeroContentLayout }
+  | { type: 'SET_HERO_SUB_TEXT1'; text: string }
+  | { type: 'SET_HERO_SUB_TEXT1_STYLE'; style: Partial<TextStyle> }
   | { type: 'SET_HERO_TITLE'; title: string }
   | { type: 'SET_HERO_TITLE_STYLE'; style: Partial<TextStyle> }
+  | { type: 'SET_HERO_SUB_TEXT2'; text: string }
+  | { type: 'SET_HERO_SUB_TEXT2_STYLE'; style: Partial<TextStyle> }
+  | { type: 'SET_HERO_SUB_TEXT3'; text: string }
+  | { type: 'SET_HERO_SUB_TEXT3_STYLE'; style: Partial<TextStyle> }
   | { type: 'ADD_PRODUCT' }
   | { type: 'UPDATE_PRODUCT'; id: string; data: Partial<ProductItem> }
   | { type: 'REMOVE_PRODUCT'; id: string }
@@ -64,6 +80,8 @@ type Action =
   | { type: 'SET_BG_PRODUCT_IMAGE'; file: File | null; preview: string }
   | { type: 'SET_BG_SUB_IMAGE'; index: number; file: File | null; preview: string }
   | { type: 'SET_BG_REFERENCE_IMAGE'; file: File | null; preview: string }
+  | { type: 'SET_BG_CROP'; x: number; y: number }
+  | { type: 'SET_BG_CROP_ZOOM'; zoom: number }
   | { type: 'ADD_FONT'; font: FontConfig }
   | { type: 'SELECT_FONT'; family: string };
 
@@ -77,10 +95,22 @@ function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, layoutType: action.layoutType };
     case 'SET_HERO_CONTENT_LAYOUT':
       return { ...state, heroContentLayout: action.layout };
+    case 'SET_HERO_SUB_TEXT1':
+      return { ...state, heroSubText1: action.text };
+    case 'SET_HERO_SUB_TEXT1_STYLE':
+      return { ...state, heroSubText1Style: { ...state.heroSubText1Style, ...action.style } };
     case 'SET_HERO_TITLE':
       return { ...state, heroTitle: action.title };
     case 'SET_HERO_TITLE_STYLE':
       return { ...state, heroTitleStyle: { ...state.heroTitleStyle, ...action.style } };
+    case 'SET_HERO_SUB_TEXT2':
+      return { ...state, heroSubText2: action.text };
+    case 'SET_HERO_SUB_TEXT2_STYLE':
+      return { ...state, heroSubText2Style: { ...state.heroSubText2Style, ...action.style } };
+    case 'SET_HERO_SUB_TEXT3':
+      return { ...state, heroSubText3: action.text };
+    case 'SET_HERO_SUB_TEXT3_STYLE':
+      return { ...state, heroSubText3Style: { ...state.heroSubText3Style, ...action.style } };
     case 'ADD_PRODUCT':
       return {
         ...state,
@@ -119,7 +149,11 @@ function editorReducer(state: EditorState, action: Action): EditorState {
     case 'SET_BACKGROUND_COLOR':
       return { ...state, backgroundColor: action.color };
     case 'SET_BACKGROUND_IMAGE':
-      return { ...state, backgroundImage: action.url };
+      return { ...state, backgroundImage: action.url, bgCropX: 50, bgCropY: 50, bgCropZoom: 1 };
+    case 'SET_BG_CROP':
+      return { ...state, bgCropX: action.x, bgCropY: action.y };
+    case 'SET_BG_CROP_ZOOM':
+      return { ...state, bgCropZoom: action.zoom };
     case 'SET_AI_PROMPT':
       return { ...state, aiPrompt: action.prompt };
     case 'SET_BG_PRODUCT_IMAGE':

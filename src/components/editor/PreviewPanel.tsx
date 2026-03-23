@@ -40,8 +40,8 @@ export default function PreviewPanel({ renderRef }: PreviewPanelProps) {
       : state.backgroundImage
         ? {
             backgroundImage: `url(${state.backgroundImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundSize: state.bgCropZoom > 1 ? `${state.bgCropZoom * 100}%` : 'cover',
+            backgroundPosition: `${state.bgCropX}% ${state.bgCropY}%`,
           }
         : { backgroundColor: state.backgroundColor }),
   };

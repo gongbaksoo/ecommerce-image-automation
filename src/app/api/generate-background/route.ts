@@ -39,9 +39,15 @@ export async function POST(request: NextRequest) {
       `- Only the background, staging, lighting, and surrounding environment may be generated or modified.`,
     ].join('\n');
 
+    const w = width || 1200;
+    const h = height || 800;
+    const aspectRatio = w / h;
+    const orientation = aspectRatio > 1.2 ? 'landscape (wide)' : aspectRatio < 0.8 ? 'portrait (tall)' : 'square';
+
     const systemPromptParts = [
       `Create a product staging/lifestyle photo for an e-commerce banner.`,
-      `Size: ${width || 1200}x${height || 800} pixels.`,
+      `CRITICAL - Image dimensions: ${w}x${h} pixels (aspect ratio ${aspectRatio.toFixed(2)}:1, ${orientation}).`,
+      `The image MUST be generated in ${orientation} orientation matching this exact aspect ratio.`,
       `Style: Clean, professional, visually appealing.`,
       PRODUCT_IMAGE_RULE,
       textPositionGuide ? `[TEXT OVERLAY ZONE] ${textPositionGuide}` : '',

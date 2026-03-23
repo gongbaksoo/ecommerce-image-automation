@@ -6,6 +6,7 @@ import { useEditor } from '@/contexts/EditorContext';
 import type { HeroContentLayout } from '@/types';
 import { TEXT_POSITION_PRODUCT_GUIDE } from '@/types';
 import { getGeminiApiKey, getGeminiModel, loadApiSettings, saveApiSettings } from '@/lib/storage/apiKeyStorage';
+import { usePlatforms } from '@/hooks/usePlatforms';
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -18,12 +19,20 @@ function fileToBase64(file: File): Promise<string> {
 import { showToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import ImageUploader from './ImageUploader';
+import BackgroundCropSelector from './BackgroundCropSelector';
 
 export default function BackgroundConfigurator() {
   const { state, dispatch } = useEditor();
+  const { platforms } = usePlatforms();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentModel, setCurrentModel] = useState(() => getGeminiModel());
+
+  // 선택된 규격의 실제 크기
+  const platform = platforms.find((p) => p.id === state.selectedPlatformId);
+  const spec = platform?.imageSpecs.find((s) => s.id === state.selectedImageSpecId);
+  const specWidth = spec?.width ?? 1200;
+  const specHeight = spec?.height ?? 800;
 
   const handleGenerate = async () => {
     if (!state.aiPrompt.trim()) return;
@@ -58,8 +67,8 @@ export default function BackgroundConfigurator() {
           prompt: state.aiPrompt,
           apiKey,
           model: currentModel,
-          width: 1200,
-          height: 800,
+          width: specWidth,
+          height: specHeight,
           productImage: productImageBase64,
           subImage1: subImages[0] ?? undefined,
           subImage2: subImages[1] ?? undefined,
@@ -315,13 +324,7 @@ export default function BackgroundConfigurator() {
             </div>
           )}
           {state.backgroundImage && state.backgroundType === 'ai' && (
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              <img
-                src={state.backgroundImage}
-                alt="AI 생성 배경"
-                className="h-24 w-full object-cover"
-              />
-            </div>
+            <BackgroundCropSelector />
           )}
         </div>
       )}

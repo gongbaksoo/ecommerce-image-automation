@@ -90,8 +90,14 @@ export interface EditorState {
   heroContentLayout: HeroContentLayout;
 
   // Step 2: 콘텐츠
+  heroSubText1: string;
+  heroSubText1Style: TextStyle;
   heroTitle: string;
   heroTitleStyle: TextStyle;
+  heroSubText2: string;
+  heroSubText2Style: TextStyle;
+  heroSubText3: string;
+  heroSubText3Style: TextStyle;
   products: ProductItem[];
   productColumns: 1 | 2 | 3;
   productNameStyle: TextStyle;
@@ -109,6 +115,9 @@ export interface EditorState {
   bgSubImagePreviews: string[];
   bgReferenceImage: File | null;
   bgReferenceImagePreview: string;
+  bgCropX: number;     // 0~100 (%)
+  bgCropY: number;     // 0~100 (%)
+  bgCropZoom: number;  // 1~3 (배율)
 
   // 폰트
   fonts: FontConfig[];
@@ -141,11 +150,20 @@ export interface ExportResult {
   fileName: string;
 }
 
-/** 기본 텍스트 스타일 */
+/** 기본 메인 문구 스타일 */
 export const DEFAULT_TEXT_STYLE: TextStyle = {
   fontFamily: 'sans-serif',
   fontSize: 32,
   fontWeight: 700,
+  color: '#ffffff',
+  textAlign: 'center',
+};
+
+/** 기본 서브 문구 스타일 */
+export const DEFAULT_SUB_TEXT_STYLE: TextStyle = {
+  fontFamily: 'sans-serif',
+  fontSize: 18,
+  fontWeight: 400,
   color: '#ffffff',
   textAlign: 'center',
 };

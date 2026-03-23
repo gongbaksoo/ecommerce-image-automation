@@ -204,8 +204,14 @@ interface EditorState {
   heroContentLayout: HeroContentLayout; // 문구 배치 위치 ('text-top' | 'text-center' | 'text-bottom' | 'text-left')
 
   // Step 2: 콘텐츠
+  heroSubText1: string;                 // 서브 문구 1 (메인 문구 위)
+  heroSubText1Style: TextStyle;
   heroTitle: string;                    // 행사 메인 문구
   heroTitleStyle: TextStyle;            // 메인 문구 스타일
+  heroSubText2: string;                 // 서브 문구 2 (메인 문구 아래)
+  heroSubText2Style: TextStyle;
+  heroSubText3: string;                 // 서브 문구 3 (서브 문구 2 아래)
+  heroSubText3Style: TextStyle;
   products: ProductItem[];              // 행사 상품 목록
   productColumns: 1 | 2 | 3;           // 하단 상품 열 수
   productNameStyle: TextStyle;          // 상품명 스타일
@@ -223,6 +229,9 @@ interface EditorState {
   bgSubImagePreviews: string[];
   bgReferenceImage: File | null;       // 레퍼런스 이미지 (스타일 참고용)
   bgReferenceImagePreview: string;
+  bgCropX: number;                     // 크롭 위치 X (0~100%)
+  bgCropY: number;                     // 크롭 위치 Y (0~100%)
+  bgCropZoom: number;                  // 크롭 줌 배율 (1~3)
 
   // 폰트
   fonts: FontConfig[];                 // 사용 가능한 폰트 목록
@@ -619,6 +628,7 @@ export async function POST(request: Request) {
 | `ProductInputForm` | components/inputs/ | 상품 정보 입력 + 열 수 선택 (통합) | ✅ |
 | `FontSelector` | components/inputs/ | 기본 폰트 선택 + 커스텀 폰트 업로드 (FontFace API) | ✅ |
 | `BackgroundConfigurator` | components/inputs/ | 배경 설정 (단색/업로드/AI) + 문구 위치 프리셋 + 메인 상품/서브 이미지 + 모델 선택 + 레퍼런스 이미지 | ✅ |
+| `BackgroundCropSelector` | components/inputs/ | AI 생성 배경 크롭 영역 선택 (드래그 이동 + 줌 100%~300%) | ✅ |
 | `ExportButton` | components/export/ | 이미지 생성(html2canvas) + PNG/JPG 다운로드 | ✅ |
 | `Button/Input/Modal/Toast/Navigation` | components/ui/ | 공통 UI 컴포넌트 | ✅ |
 
@@ -911,3 +921,4 @@ Phase 8: 마무리                                          ✅ Done
 | 0.1 | 2026-03-18 | Initial draft | jeongjihye |
 | 0.2 | 2026-03-19 | 구현 완료 반영: 파일 구조/컴포넌트/API/구현순서 실제와 동기화. API 키 설정(ApiKeyManager), 모델 조회(/api/list-models), 레이아웃 유형(LayoutType), 미리보기 렌더링 개선(ProductCard maxHeight, ProductGrid flex) 반영 | jeongjihye |
 | 0.3 | 2026-03-22 | 구조 변경: heroImage 제거 → 메인 상품을 AI 배경에 포함. 문구 위치 프리셋(text-top/center/bottom/left). 서브 이미지(최대 3개) 추가. API에 textPositionGuide/subImage1~3 전달. EditorState/Context/UI/API 전체 반영 | jeongjihye |
+| 0.4 | 2026-03-23 | 서브 문구 3개(heroSubText1~3) 추가. BackgroundCropSelector 컴포넌트 신규(드래그+줌). bgCropX/Y/Zoom state 추가. 규격별 동적 이미지 크기 요청. API 프롬프트에 종횡비 강화 | jeongjihye |
