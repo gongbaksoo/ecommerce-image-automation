@@ -30,6 +30,29 @@ export interface ProductItem {
 }
 
 /** 텍스트 스타일 설정 */
+/** 텍스트 배경 설정 */
+export interface TextBg {
+  type: 'none' | 'solid' | 'gradient' | 'blur';
+  color: string;              // 단색 배경색 or 그라데이션 시작색
+  opacity: number;            // 0~1
+  padding: number;            // px
+  borderRadius: number;       // px
+  gradientEndColor: string;   // 그라데이션 끝색
+  gradientDirection: 'to right' | 'to bottom' | 'to left' | 'to top';
+  blurAmount: number;         // blur px
+}
+
+export const DEFAULT_TEXT_BG: TextBg = {
+  type: 'none',
+  color: '#000000',
+  opacity: 0.5,
+  padding: 8,
+  borderRadius: 4,
+  gradientEndColor: '#000000',
+  gradientDirection: 'to right',
+  blurAmount: 8,
+};
+
 export interface TextStyle {
   fontFamily: string;
   fontSize: number;
@@ -63,10 +86,10 @@ export const HERO_CONTENT_LAYOUT_LABELS: Record<HeroContentLayout, string> = {
 
 /** 문구 위치별 상품 배치 가이드 (AI 프롬프트용) */
 export const TEXT_POSITION_PRODUCT_GUIDE: Record<HeroContentLayout, string> = {
-  'text-top': 'Place the product in the lower-center area. Keep the top 30% clear for text overlay.',
-  'text-center': 'Place the product slightly off-center or at the bottom. Keep the center area clear for text overlay.',
-  'text-bottom': 'Place the product in the upper-center area. Keep the bottom 30% clear for text overlay.',
-  'text-left': 'Place the product on the right side. Keep the left 40% clear for text overlay.',
+  'text-top': 'Place the main product in the lower-center area, AVOIDING the top 30% where text will be overlaid. The background scene itself should fill the ENTIRE image naturally — do NOT leave blank or empty space anywhere.',
+  'text-center': 'Place the main product slightly off-center or toward the bottom, AVOIDING the center area where text will be overlaid. The background scene itself should fill the ENTIRE image naturally — do NOT leave blank or empty space anywhere.',
+  'text-bottom': 'Place the main product in the upper-center area, AVOIDING the bottom 30% where text will be overlaid. The background scene itself should fill the ENTIRE image naturally — do NOT leave blank or empty space anywhere.',
+  'text-left': 'Place the main product on the right side, AVOIDING the left 40% where text will be overlaid. The background scene itself should fill the ENTIRE image naturally — do NOT leave blank or empty space anywhere.',
 };
 
 /** 레이아웃 유형 */
@@ -97,6 +120,7 @@ export interface EditorState {
   heroSubText2: string;
   heroSubText2Style: TextStyle;
   heroSubText3: string;
+  heroTextBg: TextBg;  // 문구 영역 통합 배경
   heroSubText3Style: TextStyle;
   products: ProductItem[];
   productColumns: 1 | 2 | 3;

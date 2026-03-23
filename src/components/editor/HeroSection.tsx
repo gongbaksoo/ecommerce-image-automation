@@ -1,26 +1,66 @@
 'use client';
 
 import { useEditor } from '@/contexts/EditorContext';
-import type { TextStyle } from '@/types';
+import type { TextStyle, TextBg } from '@/types';
 
-function SubText({ text, style, layout }: { text: string; style: TextStyle; layout: string }) {
+function hexToRgba(hex: string, opacity: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
+function getTextBgStyle(bg: TextBg): React.CSSProperties {
+  if (bg.type === 'none') return {};
+
+  const base: React.CSSProperties = {
+    padding: `${bg.padding}px`,
+    borderRadius: `${bg.borderRadius}px`,
+  };
+
+  if (bg.type === 'solid') {
+    return { ...base, backgroundColor: hexToRgba(bg.color, bg.opacity) };
+  }
+
+  if (bg.type === 'gradient') {
+    return {
+      ...base,
+      background: `linear-gradient(${bg.gradientDirection}, ${hexToRgba(bg.color, bg.opacity)}, ${hexToRgba(bg.gradientEndColor, bg.opacity)})`,
+    };
+  }
+
+  if (bg.type === 'blur') {
+    return {
+      ...base,
+      backgroundColor: hexToRgba(bg.color, bg.opacity * 0.5),
+      backdropFilter: `blur(${bg.blurAmount}px)`,
+      WebkitBackdropFilter: `blur(${bg.blurAmount}px)`,
+    };
+  }
+
+  return {};
+}
+
+function TextBlock({ text, style, layout, isTitle }: { text: string; style: TextStyle; layout: string; isTitle?: boolean }) {
   if (!text) return null;
+  const Tag = isTitle ? 'h1' : 'p';
+
   return (
-    <p
+    <Tag
       style={{
         fontFamily: style.fontFamily,
         fontSize: `${style.fontSize}px`,
         fontWeight: style.fontWeight,
         color: style.color,
         textAlign: layout === 'text-left' ? 'left' : style.textAlign,
-        lineHeight: 1.4,
-        textShadow: '0 1px 4px rgba(0,0,0,0.2)',
+        lineHeight: isTitle ? 1.3 : 1.4,
+        textShadow: isTitle ? '0 2px 8px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.2)',
         wordBreak: 'keep-all',
         margin: 0,
       }}
     >
       {text}
-    </p>
+    </Tag>
   );
 }
 
@@ -31,40 +71,22 @@ export default function HeroSection() {
   const hasAnyText = state.heroTitle || state.heroSubText1 || state.heroSubText2 || state.heroSubText3;
   if (!hasAnyText) return null;
 
-  // 레이아웃별 텍스트 위치 스타일
   const positionStyle: React.CSSProperties = (() => {
     switch (layout) {
       case 'text-top':
-        return {
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          paddingTop: '8%',
-        };
+        return { justifyContent: 'flex-start', alignItems: 'center', paddingTop: '8%' };
       case 'text-center':
-        return {
-          justifyContent: 'center',
-          alignItems: 'center',
-        };
+        return { justifyContent: 'center', alignItems: 'center' };
       case 'text-bottom':
-        return {
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          paddingBottom: '8%',
-        };
+        return { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '8%' };
       case 'text-left':
-        return {
-          justifyContent: 'center',
-          alignItems: 'flex-start',
-          paddingLeft: '5%',
-        };
+        return { justifyContent: 'center', alignItems: 'flex-start', paddingLeft: '5%' };
       default:
-        return {
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          paddingTop: '8%',
-        };
+        return { justifyContent: 'flex-start', alignItems: 'center', paddingTop: '8%' };
     }
   })();
+
+  const bgStyle = getTextBgStyle(state.heroTextBg);
 
   return (
     <div
@@ -76,34 +98,19 @@ export default function HeroSection() {
         ...positionStyle,
       }}
     >
-      <div style={{ maxWidth: layout === 'text-left' ? '40%' : '90%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {/* 서브 문구 1 (메인 문구 위) */}
-        <SubText text={state.heroSubText1} style={state.heroSubText1Style} layout={layout} />
-
-        {/* 메인 문구 */}
-        {state.heroTitle && (
-          <h1
-            style={{
-              fontFamily: state.heroTitleStyle.fontFamily,
-              fontSize: `${state.heroTitleStyle.fontSize}px`,
-              fontWeight: state.heroTitleStyle.fontWeight,
-              color: state.heroTitleStyle.color,
-              textAlign: layout === 'text-left' ? 'left' : state.heroTitleStyle.textAlign,
-              lineHeight: 1.3,
-              textShadow: '0 2px 8px rgba(0,0,0,0.3)',
-              wordBreak: 'keep-all',
-              margin: 0,
-            }}
-          >
-            {state.heroTitle}
-          </h1>
-        )}
-
-        {/* 서브 문구 2 (메인 문구 아래) */}
-        <SubText text={state.heroSubText2} style={state.heroSubText2Style} layout={layout} />
-
-        {/* 서브 문구 3 (서브 문구 2 아래) */}
-        <SubText text={state.heroSubText3} style={state.heroSubText3Style} layout={layout} />
+      <div
+        style={{
+          maxWidth: layout === 'text-left' ? '40%' : '90%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          ...bgStyle,
+        }}
+      >
+        <TextBlock text={state.heroSubText1} style={state.heroSubText1Style} layout={layout} />
+        <TextBlock text={state.heroTitle} style={state.heroTitleStyle} layout={layout} isTitle />
+        <TextBlock text={state.heroSubText2} style={state.heroSubText2Style} layout={layout} />
+        <TextBlock text={state.heroSubText3} style={state.heroSubText3Style} layout={layout} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { createContext, useContext, useReducer, ReactNode } from 'react';
 import type {
   EditorState,
   TextStyle,
+  TextBg,
   ProductItem,
   FontConfig,
   LayoutType,
@@ -12,6 +13,7 @@ import type {
 import {
   DEFAULT_TEXT_STYLE,
   DEFAULT_SUB_TEXT_STYLE,
+  DEFAULT_TEXT_BG,
   DEFAULT_PRODUCT_NAME_STYLE,
   DEFAULT_PRODUCT_DESC_STYLE,
   DEFAULT_PRODUCT_PRICE_STYLE,
@@ -31,6 +33,7 @@ const initialState: EditorState = {
   heroSubText2Style: DEFAULT_SUB_TEXT_STYLE,
   heroSubText3: '',
   heroSubText3Style: DEFAULT_SUB_TEXT_STYLE,
+  heroTextBg: DEFAULT_TEXT_BG,
   products: [],
   productColumns: 3,
   productNameStyle: DEFAULT_PRODUCT_NAME_STYLE,
@@ -66,6 +69,7 @@ type Action =
   | { type: 'SET_HERO_SUB_TEXT2_STYLE'; style: Partial<TextStyle> }
   | { type: 'SET_HERO_SUB_TEXT3'; text: string }
   | { type: 'SET_HERO_SUB_TEXT3_STYLE'; style: Partial<TextStyle> }
+  | { type: 'SET_HERO_TEXT_BG'; bg: Partial<TextBg> }
   | { type: 'ADD_PRODUCT' }
   | { type: 'UPDATE_PRODUCT'; id: string; data: Partial<ProductItem> }
   | { type: 'REMOVE_PRODUCT'; id: string }
@@ -111,6 +115,8 @@ function editorReducer(state: EditorState, action: Action): EditorState {
       return { ...state, heroSubText3: action.text };
     case 'SET_HERO_SUB_TEXT3_STYLE':
       return { ...state, heroSubText3Style: { ...state.heroSubText3Style, ...action.style } };
+    case 'SET_HERO_TEXT_BG':
+      return { ...state, heroTextBg: { ...state.heroTextBg, ...action.bg } };
     case 'ADD_PRODUCT':
       return {
         ...state,

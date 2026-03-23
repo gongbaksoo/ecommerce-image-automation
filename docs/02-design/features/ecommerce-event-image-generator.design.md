@@ -212,6 +212,7 @@ interface EditorState {
   heroSubText2Style: TextStyle;
   heroSubText3: string;                 // 서브 문구 3 (서브 문구 2 아래)
   heroSubText3Style: TextStyle;
+  heroTextBg: TextBg;                   // 문구 영역 통합 배경 (단색/그라데이션/블러)
   products: ProductItem[];              // 행사 상품 목록
   productColumns: 1 | 2 | 3;           // 하단 상품 열 수
   productNameStyle: TextStyle;          // 상품명 스타일
@@ -922,3 +923,4 @@ Phase 8: 마무리                                          ✅ Done
 | 0.2 | 2026-03-19 | 구현 완료 반영: 파일 구조/컴포넌트/API/구현순서 실제와 동기화. API 키 설정(ApiKeyManager), 모델 조회(/api/list-models), 레이아웃 유형(LayoutType), 미리보기 렌더링 개선(ProductCard maxHeight, ProductGrid flex) 반영 | jeongjihye |
 | 0.3 | 2026-03-22 | 구조 변경: heroImage 제거 → 메인 상품을 AI 배경에 포함. 문구 위치 프리셋(text-top/center/bottom/left). 서브 이미지(최대 3개) 추가. API에 textPositionGuide/subImage1~3 전달. EditorState/Context/UI/API 전체 반영 | jeongjihye |
 | 0.4 | 2026-03-23 | 서브 문구 3개(heroSubText1~3) 추가. BackgroundCropSelector 컴포넌트 신규(드래그+줌). bgCropX/Y/Zoom state 추가. 규격별 동적 이미지 크기 요청. API 프롬프트에 종횡비 강화 | jeongjihye |
+| 0.5 | 2026-03-23 | 문구 통합 배경(heroTextBg: TextBg) 추가 — 단색/그라데이션/블러 3종. 개별 문구 배경 제거. AI 프롬프트 개선: 배경 전체 채움 규칙 + 상품 위치만 조절 | jeongjihye |
